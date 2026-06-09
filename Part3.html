@@ -1,0 +1,325 @@
+<!-- Fichier : Part3.html -->
+<script type="text/babel">
+  function Part3_ResourceMgmt({ onNext }) {
+    const [activeStep, setActiveStep] = React.useState('1');
+    const [activeVideoIndex, setActiveVideoIndex] = React.useState(1);
+
+    // Mémorisation des cases cliquées (On initialise avec la case 1 qui est ouverte par défaut)
+    const [clickedSteps, setClickedSteps] = React.useState(new Set(['1']));
+    const [hasLoggedCompletion, setHasLoggedCompletion] = React.useState(false);
+
+    // Utilisation du contexte global pour récupérer/sauvegarder les contenus ET le logProgress
+    const { content = {}, setContent, isEditMode, logProgress } = React.useContext(window.ContentContext) || {};
+
+    // Définition des nœuds du diagramme
+    const steps = [
+      { id: '1', prefix: "Etape 1", titleId: "p3_s1_title", label: "Création de la ressource", icon: "fa-plus-square", color: "slate" },
+      { id: '2', prefix: "Etape 2", titleId: "p3_s2_title", label: "Validation de la ressource", icon: "fa-check-double", color: "indigo" },
+      { id: '3', prefix: "Etape 3", titleId: "p3_s3_title", label: "Affectation collaborateur", icon: "fa-user-check", color: "emerald" },
+      { id: '3b', prefix: "Etape 3 bis", titleId: "p3_s3b_title", label: "Création collaborateur", icon: "fa-user-plus", color: "emerald" },
+      { id: '4', prefix: "Etape 4", titleId: "p3_s4_title", label: "Planifier l'arrivée", icon: "fa-plane-arrival", color: "sky" },
+      { id: 'ongoing', prefix: "Statut 5", titleId: "p3_songoing_title", label: "Ressource en cours", icon: "fa-play-circle", color: "emerald" },
+      { id: '5', prefix: "Etape 5", titleId: "p3_s5_title", label: "Modification (Avenant)", icon: "fa-calendar-alt", color: "amber" },
+      { id: '7', prefix: "Etape 7", titleId: "p3_s7_title", label: "Planifier le départ", icon: "fa-door-open", color: "orange" },
+      { id: '8', prefix: "Etape 8", titleId: "p3_s8_title", label: "Clôturer la ressource", icon: "fa-lock", color: "red" }
+    ];
+
+    const isAllStepsClicked = clickedSteps.size === steps.length;
+
+    // Remonter la page automatiquement au chargement
+    React.useEffect(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
+    // Réinitialiser à la vidéo 1 quand on change d'étape
+    React.useEffect(() => {
+      setActiveVideoIndex(1);
+    }, [activeStep]);
+
+    // Déclencher le log unique quand tout a été cliqué
+    React.useEffect(() => {
+      if (isAllStepsClicked && !hasLoggedCompletion) {
+        setHasLoggedCompletion(true);
+        if (logProgress) {
+          logProgress('Partie 3 - Diagramme', { exercice: 'Exploration Cycle de Vie', action: 'Toutes les étapes (9/9) consultées' });
+        }
+      }
+    }, [isAllStepsClicked, hasLoggedCompletion, logProgress]);
+
+    const handleNodeClick = (id) => {
+      setActiveStep(id);
+      setClickedSteps(prev => new Set(prev).add(id));
+    };
+
+    // Extraction des URLs vidéos depuis le CMS pour l'étape courante
+    const v1Url = content[`p3_s${activeStep}_v1`] || '';
+    const v2Url = content[`p3_s${activeStep}_v2`] || '';
+    const hasSecondVideo = v2Url && v2Url.trim() !== '';
+    const rawVideoUrl = activeVideoIndex === 1 ? v1Url : v2Url;
+
+    // Fonction de formatage automatique des liens (Drive, YouTube) vers un format iFrame
+    const formatVideoUrl = (url) => {
+      if (!url) return '';
+      let formatted = url.trim();
+      
+      // Formatage Google Drive (.../view -> .../preview)
+      if (formatted.includes('drive.google.com/file/d/')) {
+        formatted = formatted.replace(/\/view.*$/, '/preview');
+      }
+      // Formatage YouTube classique
+      else if (formatted.includes('youtube.com/watch?v=')) {
+        const videoId = formatted.split('v=')[1].split('&')[0];
+        formatted = `https://www.youtube.com/embed/${videoId}`;
+      }
+      // Formatage YouTube raccourci (youtu.be)
+      else if (formatted.includes('youtu.be/')) {
+        const videoId = formatted.split('youtu.be/')[1].split('?')[0];
+        formatted = `https://www.youtube.com/embed/${videoId}`;
+      }
+      
+      return formatted;
+    };
+
+    const currentVideoUrl = formatVideoUrl(rawVideoUrl);
+
+    // Composant Noeud du diagramme
+    const FlowNode = ({ item }) => {
+      if (!item) return null;
+      const isActive = activeStep === item.id;
+      const isVisited = clickedSteps.has(item.id);
+
+      return (
+        <button
+          onClick={() => handleNodeClick(item.id)}
+          className={`flex flex-col items-center justify-center w-36 h-24 p-2 rounded-xl border-2 transition-all relative z-20 shrink-0
+            ${isActive 
+              ? `bg-${item.color}-50 border-${item.color}-500 text-${item.color}-900 ring-4 ring-${item.color}-100 scale-105 shadow-md` 
+              : `bg-white border-slate-200 text-slate-600 hover:border-${item.color}-300 hover:bg-slate-50 shadow-sm`}`}
+        >
+          {isVisited && !isActive && (
+            <i className="fas fa-check-circle absolute top-2 right-2 text-emerald-500 text-xs"></i>
+          )}
+          <i className={`fas ${item.icon} text-xl mb-2 ${isActive ? `text-${item.color}-600` : 'text-slate-400'}`}></i>
+          <span className="text-[10px] font-bold text-center leading-tight">{item.prefix} :<br/>{item.label}</span>
+        </button>
+      );
+    };
+
+    return (
+      <div className="space-y-6 animate-fade-in pb-10">
+        
+        {/* EN-TÊTE */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-800 mb-2 flex items-center">
+            <i className="fas fa-project-diagram text-blue-600 mr-3"></i> 
+            <T id="p3_title" />
+          </h2>
+          <p className="text-slate-600">
+            <T id="p3_desc" multiline={true} />
+          </p>
+        </div>
+
+        {/* DIAGRAMME INTERACTIF (FLOWCHART STRUCTURÉ) */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 overflow-x-auto flex justify-center">
+          <div className="flex flex-col items-center relative pt-28 pb-4 w-full min-w-[900px]">
+
+            {/* BRANCHE SUPÉRIEURE : Étape 3b */}
+            <div className="absolute top-2 flex flex-col items-center">
+              <FlowNode item={steps.find(s => s.id === '3b')} />
+              <i className="fas fa-arrow-down text-slate-300 text-xl mt-3 mb-1"></i>
+            </div>
+
+            {/* LIGNE HORIZONTALE : 1 -> 2 -> 3 */}
+            <div className="flex items-center relative z-10">
+               <div className="absolute right-full mr-4 flex items-center gap-4">
+                  <FlowNode item={steps.find(s => s.id === '1')} />
+                  <i className="fas fa-arrow-right text-slate-300 text-xl"></i>
+                  <FlowNode item={steps.find(s => s.id === '2')} />
+                  <i className="fas fa-arrow-right text-slate-300 text-xl"></i>
+               </div>
+               <FlowNode item={steps.find(s => s.id === '3')} />
+            </div>
+
+            {/* FLÈCHE DESCENTE DE 3 À 4 */}
+            <i className="fas fa-arrow-down text-slate-300 text-xl my-3"></i>
+
+            {/* NŒUD 4 */}
+            <div className="z-10">
+              <FlowNode item={steps.find(s => s.id === '4')} />
+            </div>
+
+            {/* FLÈCHE DESCENTE DE 4 À ONGOING */}
+            <i className="fas fa-arrow-down text-slate-300 text-xl my-3"></i>
+
+            {/* HUB CENTRAL : RESSOURCE EN COURS (Cliquable) */}
+            <div className="z-20 relative">
+              <FlowNode item={steps.find(s => s.id === 'ongoing')} />
+            </div>
+
+            {/* BRANCHES PARALLÈLES VERS : 5, 7, 8 */}
+            <div className="relative mt-8 flex gap-6 w-[480px]">
+               <div className="absolute top-[-32px] left-1/2 w-[2px] h-[32px] bg-slate-300"></div>
+               <div className="absolute top-[-32px] left-1/2 -translate-x-1/2 w-[336px] h-[2px] bg-slate-300"></div>
+               <div className="absolute top-[-32px] left-1/2 -translate-x-[168px] w-[2px] h-[32px] bg-slate-300"></div>
+               <div className="absolute top-[-32px] left-1/2 translate-x-[168px] w-[2px] h-[32px] bg-slate-300"></div>
+
+               <div className="w-36 flex justify-center z-10"><FlowNode item={steps.find(s => s.id === '5')} /></div>
+               <div className="w-36 flex justify-center z-10"><FlowNode item={steps.find(s => s.id === '7')} /></div>
+               <div className="w-36 flex justify-center z-10"><FlowNode item={steps.find(s => s.id === '8')} /></div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* LECTEUR VIDÉO ET EXPLICATIONS */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            
+            {/* Colonne Explication */}
+            <div className="space-y-4 animate-fade-in" key={activeStep}>
+              <h3 className="text-xl font-bold text-slate-800 flex items-center border-b pb-3 border-slate-100">
+                <i className={`fas ${steps.find(s => s.id === activeStep)?.icon || 'fa-info-circle'} text-${steps.find(s => s.id === activeStep)?.color || 'slate'}-500 mr-3`}></i>
+                <T id={`p3_s${activeStep}_title`} />
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-5 rounded-xl border border-slate-100 shadow-inner">
+                <T id={`p3_s${activeStep}_desc`} multiline={true} />
+              </p>
+              
+              {/* Conseils Pédagogiques conditionnels */}
+              {activeStep === '2' && (
+                <div className="bg-indigo-50 border-l-4 border-indigo-500 p-3 rounded text-xs text-indigo-800">
+                  <i className="fas fa-check mr-2"></i> La ressource doit être validée pour être visible dans les rapports capacitifs.
+                </div>
+              )}
+              {activeStep === 'ongoing' && (
+                <div className="bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded text-xs text-emerald-800">
+                  <i className="fas fa-info-circle mr-2"></i> Le collaborateur est actif, il génère 100% de la capacité définie par son contrat. Depuis cet état, plusieurs actions d'évolution ou de clôture sont possibles.
+                </div>
+              )}
+              {activeStep === '5' && (
+                <div className="bg-amber-50 border-l-4 border-amber-500 p-3 rounded text-xs text-amber-800">
+                  <i className="fas fa-lightbulb mr-2"></i> Depuis l'état "Ongoing", un avenant repousse temporairement le statut de la ressource en "4 - Pending".
+                </div>
+              )}
+              {activeStep === '7' && (
+                <div className="bg-orange-50 border-l-4 border-orange-500 p-3 rounded text-xs text-orange-800">
+                  <i className="fas fa-info-circle mr-2"></i> Planifier le départ est la meilleure méthode : la ressource se clôturera automatiquement le jour J.
+                </div>
+              )}
+              {activeStep === '8' && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded text-xs text-red-800">
+                  <i className="fas fa-exclamation-triangle mr-2"></i> Ne jamais supprimer une ressource pour préserver l'historique. Utilisez la clôture.
+                </div>
+              )}
+            </div>
+
+            {/* Colonne Lecteur Vidéo & Configuration */}
+            <div className="flex flex-col h-full space-y-4">
+              
+              {/* Le Lecteur Vidéo */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-inner">
+                <div className="relative w-full aspect-video bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 flex flex-col justify-center items-center">
+                  {currentVideoUrl ? (
+                    <iframe 
+                      src={currentVideoUrl} 
+                      className="w-full h-full border-0 absolute top-0 left-0" 
+                      allowFullScreen={true}
+                      title={`Vidéo Tutoriel Étape ${activeStep}`}>
+                    </iframe>
+                  ) : (
+                    <div className="text-slate-500 flex flex-col items-center p-6 text-center">
+                      <i className="fas fa-video-slash text-3xl mb-3 opacity-50"></i>
+                      <span className="text-sm font-bold text-slate-400">Aucune vidéo configurée</span>
+                      <span className="text-xs mt-2">Activez le "Mode Édition" pour ajouter un lien.</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Boutons de sélection si Vidéo 2 existe */}
+                {hasSecondVideo && !isEditMode && (
+                  <div className="flex gap-2 mt-4">
+                    <button 
+                      onClick={() => setActiveVideoIndex(1)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${activeVideoIndex === 1 ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
+                    >
+                      <i className="fas fa-play-circle mr-1.5"></i> Vidéo n°1
+                    </button>
+                    <button 
+                      onClick={() => setActiveVideoIndex(2)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${activeVideoIndex === 2 ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
+                    >
+                      <i className="fas fa-play-circle mr-1.5"></i> Vidéo n°2
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* INTERFACE D'AJOUT DE VIDÉOS (Uniquement visible en Mode Édition) */}
+              {isEditMode && (
+                <div className="bg-amber-50 p-5 rounded-xl border-2 border-amber-300 shadow-sm animate-fade-in space-y-4">
+                  <h4 className="font-bold text-amber-900 text-sm flex items-center">
+                    <i className="fas fa-cogs mr-2 text-amber-600"></i>
+                    Configuration des vidéos ({steps.find(s=>s.id===activeStep)?.prefix})
+                  </h4>
+                  
+                  <div>
+                    <label className="text-xs font-bold text-amber-800 block mb-1">Lien de la Vidéo 1 :</label>
+                    <input 
+                      type="text"
+                      value={content[`p3_s${activeStep}_v1`] || ''}
+                      onChange={e => setContent({...content, [`p3_s${activeStep}_v1`]: e.target.value})}
+                      placeholder="Coller un lien Google Drive ou YouTube"
+                      className="w-full p-2.5 text-xs border border-amber-300 rounded-lg outline-none focus:border-amber-500 bg-white" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-amber-800 block mb-1">Lien de la Vidéo 2 (Optionnel) :</label>
+                    <input 
+                      type="text"
+                      value={content[`p3_s${activeStep}_v2`] || ''}
+                      onChange={e => setContent({...content, [`p3_s${activeStep}_v2`]: e.target.value})}
+                      placeholder="Coller un lien Google Drive ou YouTube"
+                      className="w-full p-2.5 text-xs border border-amber-300 rounded-lg outline-none focus:border-amber-500 bg-white" 
+                    />
+                  </div>
+
+                  <p className="text-[10px] text-amber-700 italic flex items-start mt-2">
+                    <i className="fas fa-magic mr-1.5 mt-0.5"></i>
+                    L'application transforme automatiquement les liens standards (Drive view, YouTube watch) en lecteurs intégrés.
+                  </p>
+                </div>
+              )}
+
+            </div>
+
+          </div>
+
+          <div className="mt-8 flex flex-col md:flex-row justify-between items-center border-t border-slate-100 pt-6 gap-4">
+            <div className="text-xs text-slate-500 flex-1">
+              <i className="fas fa-info-circle mr-1"></i> Cliquez sur chaque étape du diagramme pour découvrir son contenu. ({clickedSteps.size}/{steps.length})
+              
+              {isAllStepsClicked && (
+                <div className="mt-2 text-emerald-600 font-bold animate-fade-in text-sm">
+                  <i className="fas fa-check-circle mr-1.5"></i> Diagramme entièrement consulté ! Vous pouvez passer à la suite.
+                </div>
+              )}
+            </div>
+            
+            <button 
+              onClick={onNext} 
+              disabled={!isAllStepsClicked}
+              className={`py-3 px-8 text-base rounded-xl font-bold transition-all shadow-sm
+                ${!isAllStepsClicked 
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md hover:-translate-y-0.5'}`}
+            >
+              Passer à la Partie 4 <i className="fas fa-arrow-right ml-2"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    );
+  }
+</script>
