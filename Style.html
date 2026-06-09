@@ -1,0 +1,43 @@
+<!-- Fichier : Style.html -->
+<style>
+  /* Animations */
+  @keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(10px); } 
+    to { opacity: 1; transform: translateY(0); } 
+  }
+  .animate-fade-in { 
+    animation: fadeIn 0.4s ease-out forwards; 
+  }
+  
+  /* Personnalisation de la Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  
+  /* Composants Réutilisables */
+  .btn-primary { 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 0.65rem 1.5rem; 
+    background-color: #1e3a8a; 
+    color: white; 
+    font-weight: 700; 
+    font-size: 0.875rem; 
+    border-radius: 0.5rem; 
+    transition: all 0.2s; 
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); 
+    cursor: pointer; 
+  }
+  
+  .btn-primary:hover:not(:disabled) { 
+    background-color: #172554; 
+    transform: translateY(-1px); 
+  }
+  
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+</style>
