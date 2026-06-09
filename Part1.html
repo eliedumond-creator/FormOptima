@@ -1,0 +1,344 @@
+<!-- Fichier : Part1.html -->
+<script type="text/babel">
+  function Part1_CycleSOP({ onNext }) {
+    // Importation de logProgress depuis le Contexte global
+    const { logProgress } = React.useContext(window.ContentContext) || {};
+
+    // État pour le jeu interactif du Cycle S&OP (Puzzle à 5 étapes avec Dimensions Resp/Instance)
+    const [puzzleItems, setPuzzleItems] = React.useState([
+      { id: 4, textId: "p1_step4", order: null, resp: '', inst: '' }, // Affectation
+      { id: 1, textId: "p1_step1", order: null, resp: '', inst: '' }, // Collecte
+      { id: 5, textId: "p1_step5", order: null, resp: '', inst: '' }, // Rituel S&OP / Adéquation
+      { id: 2, textId: "p1_step2", order: null, resp: '', inst: '' }, // Demande
+      { id: 3, textId: "p1_step3", order: null, resp: '', inst: '' }  // Capacité
+    ]);
+    const [currentOrder, setCurrentOrder] = React.useState(1);
+    const [isSuccess, setIsSuccess] = React.useState(false);
+    const [showError, setShowError] = React.useState(false);
+
+    // Faire défiler la page tout en haut au chargement
+    React.useEffect(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
+    // Gestion de l'ordre (Clic sur la pastille)
+    const handleOrderClick = (item) => {
+      if (item.order !== null) {
+        // Réinitialise tout l'ordre pour recommencer
+        const newItems = puzzleItems.map(p => ({ ...p, order: null }));
+        setPuzzleItems(newItems);
+        setCurrentOrder(1);
+        setShowError(false);
+      } else {
+        const newItems = puzzleItems.map(p => p.id === item.id ? { ...p, order: currentOrder } : p);
+        setPuzzleItems(newItems);
+        setCurrentOrder(currentOrder + 1);
+        setShowError(false);
+      }
+    };
+
+    // Vérification globale du Puzzle 3D à 5 étapes
+    const checkPuzzle = () => {
+      const allFilled = puzzleItems.every(p => p.order !== null && p.resp !== '' && p.inst !== '');
+      if (!allFilled) {
+        setShowError("Veuillez remplir toutes les informations (Ordre, Responsable, Instance).");
+        return;
+      }
+
+      const isOrderCorrect = puzzleItems.every(p => p.order === p.id);
+      
+      const isRespCorrect = puzzleItems.every(p => {
+        if (p.id === 1) return p.resp === 'sop_mgr'; // Collecte -> S&OP Manager
+        if (p.id === 2) return p.resp === 'pm';      // Demande -> Responsable Prop. / PM
+        if (p.id === 3) return p.resp === 'mgr';     // Capacité -> Manager
+        if (p.id === 4) return p.resp === 'mgr';     // Affectation -> Manager
+        if (p.id === 5) return p.resp === 'copil';   // Adéquation -> Copil BU
+        return false;
+      });
+
+      const isInstCorrect = puzzleItems.every(p => {
+        if (p.id === 1) return p.inst === 'none';          // Collecte -> Pas d'instance
+        if (p.id === 2) return p.inst === 'avant_demande'; // Demande -> Mise à jour projet / Revue Demande
+        if (p.id === 3) return p.inst === 'none';          // Capacité -> Pas d'instance
+        if (p.id === 4) return p.inst === 'proj';          // Affectation -> Réunion Projet
+        if (p.id === 5) return p.inst === 'rituel_sop';    // Adéquation -> Rituel S&OP
+        return false;
+      });
+
+      if (isOrderCorrect && isRespCorrect && isInstCorrect) {
+        setIsSuccess(true);
+        setShowError(false);
+        if (logProgress) {
+          logProgress('Partie 1 - Cycle S&OP', { exercice: 'Puzzle 3D (5 Étapes)', resultat: 'Succès' });
+        }
+      } else {
+        setIsSuccess(false);
+        setShowError("Il y a des erreurs dans l'ordre chronologique, les responsables ou les instances. Vérifiez vos choix !");
+        if (logProgress) {
+          logProgress('Partie 1 - Cycle S&OP', { exercice: 'Puzzle 3D (5 Étapes)', resultat: 'Échec' });
+        }
+      }
+    };
+
+    return (
+      <div className="space-y-8 animate-fade-in pb-10">
+        
+        {/* EN-TÊTE DE LA PARTIE 1 */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-800 mb-2 flex items-center">
+            <i className="fas fa-sync-alt text-blue-600 mr-3"></i> 
+            <T id="p1_title" />
+          </h2>
+          <p className="text-slate-600">
+            <T id="p1_desc" multiline={true} />
+          </p>
+        </div>
+
+        {/* SECTION 1 : INTRODUCTION S&OP (SLIDE 5 INTÉGRÉE) */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-500"></div>
+          
+          <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-6 text-xl flex items-center pl-2">
+            <i className="fas fa-balance-scale text-indigo-600 mr-3"></i> 
+            <T id="p1_s5_main_title" />
+          </h3>
+          
+          <div className="pl-2">
+            <p className="text-slate-700 mb-6 font-medium text-[15px] leading-relaxed">
+              <T id="p1_s5_intro" multiline={true} />
+            </p>
+
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-200 shadow-md bg-slate-100">
+              <iframe 
+                src="https://docs.google.com/presentation/d/11OS-TNCQXm-rayUJDfuBODY3gjuCRuUQdYOFdfftVGo/embed?start=false&loop=false&delayms=3000&slide=id.g3e377d0dfa4_0_1805" 
+                frameBorder="0" 
+                width="100%" 
+                height="100%" 
+                allowFullScreen={true}
+                className="absolute top-0 left-0 w-full h-full">
+              </iframe>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 2 : RAPPEL SUR LE CYCLE S&OP (SLIDE 14 - TIMELINE) */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-blue-500"></div>
+          
+          <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-6 text-xl flex items-center pl-2">
+            <i className="fas fa-project-diagram text-blue-600 mr-3"></i> 
+            <T id="p1_s14_main_title" />
+          </h3>
+          
+          <div className="pl-2">
+            <p className="text-slate-700 mb-8 font-medium text-[15px] leading-relaxed bg-blue-50 p-4 rounded-xl border border-blue-100">
+              <T id="p1_s14_intro" multiline={true} />
+            </p>
+
+            <div className="relative border-l-2 border-slate-200 ml-4 space-y-8 pb-4 mt-8">
+              <div className="relative pl-8">
+                <div className="absolute -left-[17px] top-0 w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center border-4 border-white shadow-sm"><i className="fas fa-database text-xs"></i></div>
+                <h4 className="font-bold text-slate-800 mb-2"><T id="p1_s14_collecte_title" /></h4>
+                <p className="text-sm text-slate-600 leading-relaxed"><T id="p1_s14_collecte_desc" multiline={true} /></p>
+              </div>
+              <div className="relative pl-8">
+                <div className="absolute -left-[17px] top-0 w-8 h-8 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center border-4 border-white shadow-sm"><i className="fas fa-chart-pie text-xs"></i></div>
+                <h4 className="font-bold text-slate-800 mb-2"><T id="p1_s14_demande_title" /></h4>
+                <p className="text-sm text-slate-600 leading-relaxed"><T id="p1_s14_demande_desc" multiline={true} /></p>
+              </div>
+              <div className="relative pl-8">
+                <div className="absolute -left-[17px] top-0 w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center border-4 border-white shadow-sm"><i className="fas fa-users text-xs"></i></div>
+                <h4 className="font-bold text-slate-800 mb-2"><T id="p1_s14_capa_title" /></h4>
+                <p className="text-sm text-slate-600 leading-relaxed"><T id="p1_s14_capa_desc" multiline={true} /></p>
+              </div>
+              <div className="relative pl-8">
+                <div className="absolute -left-[17px] top-0 w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center border-4 border-white shadow-sm"><i className="fas fa-handshake text-xs"></i></div>
+                <h4 className="font-bold text-slate-800 mb-2"><T id="p1_s14_rituel_title" /></h4>
+                <p className="text-sm text-slate-600 leading-relaxed"><T id="p1_s14_rituel_desc" multiline={true} /></p>
+              </div>
+              <div className="relative pl-8">
+                <div className="absolute -left-[17px] top-0 w-8 h-8 bg-slate-200 text-slate-600 rounded-full flex items-center justify-center border-4 border-white shadow-sm"><i className="fas fa-file-invoice-dollar text-xs"></i></div>
+                <h4 className="font-bold text-slate-800 mb-2"><T id="p1_s14_finance_title" /></h4>
+                <p className="text-sm text-slate-600 leading-relaxed"><T id="p1_s14_finance_desc" multiline={true} /></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 3 : LE JEU (Validation des acquis multi-dimensions) */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 relative">
+          <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-6 text-xl flex items-center">
+            <i className="fas fa-mouse-pointer text-blue-500 mr-3"></i> 
+            <T id="p1_game_title" />
+          </h3>
+          
+          <div className="max-w-5xl mx-auto">
+            <p className="text-sm text-slate-500 mb-6 uppercase tracking-wide font-semibold text-center">
+              Reconstituez les 5 étapes de la procédure S&OP, et attribuez-y le Responsable et l'Instance correspondante.
+            </p>
+            
+            <div className="space-y-4">
+              {puzzleItems.map(item => (
+                <div 
+                  key={item.id} 
+                  className={`w-full flex flex-col xl:flex-row items-center p-4 rounded-xl border transition-all duration-200 gap-4
+                    ${item.order !== null ? 'bg-blue-50/50 border-blue-200 shadow-inner' : 'bg-white border-slate-200 hover:border-blue-400 shadow-sm'}`}
+                >
+                  <div className="flex-1 flex items-center w-full">
+                    <button 
+                      onClick={() => handleOrderClick(item)}
+                      className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-bold mr-4 shrink-0 transition-colors shadow-sm
+                        ${item.order !== null ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}
+                    >
+                      {item.order !== null ? item.order : '?'}
+                    </button>
+                    <span className="text-left font-medium text-slate-700 leading-relaxed text-sm">
+                      <T id={item.textId} multiline={true} />
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto shrink-0 border-t xl:border-t-0 xl:border-l border-slate-200 pt-3 xl:pt-0 xl:pl-4">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] uppercase font-bold text-slate-400 mb-1 ml-1">Responsable principal</span>
+                      <select 
+                        value={item.resp} 
+                        onChange={(e) => {
+                          const newItems = puzzleItems.map(p => p.id === item.id ? { ...p, resp: e.target.value } : p);
+                          setPuzzleItems(newItems);
+                          setShowError(false);
+                        }}
+                        className="p-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 bg-white shadow-sm w-full sm:w-48"
+                      >
+                        <option value="">-- Choisir --</option>
+                        <option value="sop_mgr">S&OP Manager</option>
+                        <option value="pm">Responsable Prop. / PM</option>
+                        <option value="mgr">Manager</option>
+                        <option value="copil">Copil BU</option>
+                      </select>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] uppercase font-bold text-slate-400 mb-1 ml-1">Instance / Réunion</span>
+                      <select 
+                        value={item.inst} 
+                        onChange={(e) => {
+                          const newItems = puzzleItems.map(p => p.id === item.id ? { ...p, inst: e.target.value } : p);
+                          setPuzzleItems(newItems);
+                          setShowError(false);
+                        }}
+                        className="p-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500 bg-white shadow-sm w-full sm:w-48"
+                      >
+                        <option value="">-- Choisir --</option>
+                        <option value="none">Pas d'instance</option>
+                        <option value="avant_demande">Mise à jour projet / Revue Demande</option>
+                        <option value="proj">Réunion Projet</option>
+                        <option value="rituel_sop">Rituel S&OP</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions & Affichage des Résultats */}
+            <div className="mt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="text-xs text-slate-500 flex-1">
+                <i className="fas fa-info-circle mr-1"></i> Cliquez sur la pastille '?' pour définir l'ordre chronologique. Cliquez à nouveau dessus pour recommencer.
+              </div>
+              <button 
+                onClick={checkPuzzle}
+                disabled={isSuccess}
+                className={`w-full md:w-auto font-bold py-2.5 px-6 rounded-xl shadow-sm transition-colors text-sm
+                  ${isSuccess ? 'bg-green-600 text-white cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700 text-white'}`}
+              >
+                {isSuccess ? <><i className="fas fa-check mr-2"></i> Validé</> : 'Vérifier ma réponse'}
+              </button>
+            </div>
+
+            {showError && !isSuccess && (
+              <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm font-bold text-center animate-pulse border border-red-200">
+                <i className="fas fa-times-circle mr-2 text-lg"></i> {showError}
+              </div>
+            )}
+            {isSuccess && (
+              <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-lg text-sm font-bold text-center animate-fade-in border border-green-200">
+                <i className="fas fa-check-circle mr-2 text-lg"></i> <T id="p1_game_success" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* SECTION 4 : LE RÔLE DU MANAGER (Dévoilé après réussite) */}
+        {isSuccess && (
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden animate-fade-in mt-6">
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500"></div>
+            
+            <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-6 text-xl flex items-center pl-2">
+              <i className="fas fa-user-shield text-purple-600 mr-3"></i> 
+              <T id="p1_role_main_title" />
+            </h3>
+            
+            <div className="pl-2">
+              <p className="text-slate-700 mb-8 font-medium text-lg leading-relaxed">
+                <T id="p1_role_intro" multiline={true} />
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                
+                {/* COLONNE 1 : PERMISSIONS (✅) */}
+                <div className="bg-green-50/50 p-6 rounded-xl border border-green-200 shadow-sm flex flex-col h-full">
+                  <h4 className="font-bold text-green-800 mb-5 flex items-center text-lg">
+                    <i className="fas fa-check-circle mr-2 text-green-600"></i> <T id="p1_role_do_title" />
+                  </h4>
+                  <ul className="space-y-5 text-sm text-slate-700 flex-1">
+                    <li className="flex items-start">
+                      <i className="fas fa-users text-green-600 mt-1 mr-3 shrink-0 text-base"></i> 
+                      <span className="leading-relaxed"><T id="p1_role_do_1" multiline={true} /></span>
+                    </li>
+                    <li className="flex items-start">
+                      <i className="fas fa-tasks text-green-600 mt-1 mr-3 shrink-0 text-base"></i> 
+                      <span className="leading-relaxed"><T id="p1_role_do_2" multiline={true} /></span>
+                    </li>
+                    <li className="flex items-start">
+                      <i className="fas fa-rocket text-green-600 mt-1 mr-3 shrink-0 text-base"></i> 
+                      <span className="leading-relaxed"><T id="p1_role_do_3" multiline={true} /></span>
+                    </li>
+                  </ul>
+                </div>
+                
+                {/* COLONNE 2 : RESTRICTIONS (❌) */}
+                <div className="bg-red-50/50 p-6 rounded-xl border border-red-200 shadow-sm flex flex-col h-full">
+                  <h4 className="font-bold text-red-800 mb-5 flex items-center text-lg">
+                    <i className="fas fa-ban mr-2 text-red-600"></i> <T id="p1_role_dont_title" />
+                  </h4>
+                  <ul className="space-y-5 text-sm text-slate-700 flex-1">
+                    <li className="flex items-start">
+                      <i className="fas fa-file-excel text-red-500 mt-1 mr-3 shrink-0 text-base"></i> 
+                      <span className="leading-relaxed"><T id="p1_role_dont_1" multiline={true} /></span>
+                    </li>
+                    <li className="flex items-start">
+                      <i className="fas fa-project-diagram text-red-500 mt-1 mr-3 shrink-0 text-base"></i> 
+                      <span className="leading-relaxed"><T id="p1_role_dont_2" multiline={true} /></span>
+                    </li>
+                    <li className="flex items-start">
+                      <i className="fas fa-cogs text-red-500 mt-1 mr-3 shrink-0 text-base"></i> 
+                      <span className="leading-relaxed"><T id="p1_role_dont_3" multiline={true} /></span>
+                    </li>
+                  </ul>
+                </div>
+
+              </div>
+
+            </div>
+            
+            <div className="flex justify-end mt-8 border-t border-slate-100 pt-6">
+              <button onClick={onNext} className="btn-primary">
+                <T id="p1_btn_next" /> <i className="fas fa-arrow-right ml-2"></i>
+              </button>
+            </div>
+          </div>
+        )}
+
+      </div>
+    );
+  }
+</script>
