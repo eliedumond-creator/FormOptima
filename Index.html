@@ -1,0 +1,406 @@
+<!-- Fichier : Index.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formation OPTIMA - Portail Manager S&OP</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <?!= include('Style'); ?>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans overflow-hidden">
+  
+  <div id="root"></div>
+
+  <!-- VARIABLES GLOBALES & CONTEXTE -->
+  <script type="text/babel">
+    window.ContentContext = React.createContext();
+
+    window.DEPARTMENTS = [
+      { code: 'CTECH', name: 'CTECH - CryoTech Deeptech', genDefault: 10 },
+      { code: 'CTURBO', name: 'CTURBO - CryoTurbo & Turbines', genDefault: 12 },
+      { code: 'SPAT', name: 'SPAT - Space Domain', genDefault: 8 },
+      { code: 'INNOV', name: 'INNOV - Innovation', genDefault: 15 }
+    ];
+
+    window.JOB_CODES = [];
+
+    window.WORKING_CATEGORIES = [
+      { code: 'EO', label: 'EO - Ouvrier / Employé (37.5h)', dailyHours: 7.5 },
+      { code: 'AMT', label: 'AMT - Technicien / Superv. (42.5h)', dailyHours: 8.5 },
+      { code: 'IC', label: 'IC - Ingénieur / Cadre (42.5h)', dailyHours: 8.5 }
+    ];
+  </script>
+
+  <!-- INCLUSION DES COMPOSANTS REACT MODULAIRES -->
+  <?!= include('Part1'); ?>
+  <?!= include('Part2'); ?>
+  <?!= include('Part3'); ?>
+  <?!= include('Part4'); ?>
+  <?!= include('Part5'); ?>
+
+  <!-- LOGIQUE PRINCIPALE -->
+  <script type="text/babel">
+    const { useState, useEffect, useContext } = React;
+
+    // --- COMPOSANT TEXTE ÉDITABLE (CMS) ---
+    function T({ id, multiline = false }) {
+      const { content, setContent, isEditMode } = useContext(window.ContentContext);
+      const text = content[id] !== undefined ? content[id] : `[${id}]`;
+      
+      if (!isEditMode) {
+        return <span dangerouslySetInnerHTML={{__html: text.replace(/\n/g, '<br/>')}} />;
+      }
+      
+      return multiline ? (
+        <textarea 
+          className="w-full min-h-[80px] p-2 border-2 border-amber-400 bg-amber-50 text-slate-900 rounded outline-none text-sm font-normal normal-case leading-relaxed shadow-inner focus:ring-2 ring-amber-200"
+          value={text}
+          onChange={(e) => setContent({...content, [id]: e.target.value})}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <input 
+          type="text" 
+          className="w-full p-1.5 border-2 border-amber-400 bg-amber-50 text-slate-900 rounded outline-none text-sm font-normal normal-case shadow-inner focus:ring-2 ring-amber-200"
+          value={text}
+          onChange={(e) => setContent({...content, [id]: e.target.value})}
+          onClick={(e) => e.stopPropagation()}
+        />
+      );
+    }
+
+    // --- COMPOSANT NAV ITEM ---
+    function NavItem({ icon, labelId, isActive, onClick, locked }) {
+      return (
+        <button 
+          onClick={locked ? undefined : onClick}
+          className={`w-full flex items-center px-6 py-3.5 text-xs font-bold transition-all relative
+            ${isActive ? 'bg-[#132c4a] text-white border-l-4 border-blue-500 shadow-inner' : 'text-slate-300 hover:bg-[#132c4a]/50 hover:text-white border-l-4 border-transparent'}
+            ${locked ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <i className={`fas ${icon} w-6 text-center mr-3 text-sm ${isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`}></i>
+          <span className="flex-1 text-left whitespace-normal leading-tight"><T id={labelId} /></span>
+          {locked ? <i className="fas fa-lock text-[10px] text-slate-500 ml-2"></i> : isActive && <i className="fas fa-chevron-right text-[10px] text-blue-500 opacity-50 ml-2"></i>}
+        </button>
+      );
+    }
+
+    // --- MODULE ACCUEIL & GUIDE PÉDAGOGIQUE ---
+    function HomeModule({ onNext, userSession, setUserSession, gainXp }) {
+      const [activeTab, setActiveTab] = useState('prog');
+      const [emailInput, setEmailInput] = useState('');
+      const [emailError, setEmailError] = useState('');
+
+      const handleRegister = (e) => {
+        e.preventDefault();
+        if (!emailInput.includes('@') || emailInput.length < 5) {
+          setEmailError("Veuillez saisir une adresse e-mail valide.");
+          return;
+        }
+        
+        const now = new Date();
+        const formattedDate = now.toLocaleDateString('fr-FR', { 
+          day: '2-digit', month: '2-digit', year: 'numeric', 
+          hour: '2-digit', minute: '2-digit', second: '2-digit' 
+        });
+
+        const sessionData = { email: emailInput, timestamp: formattedDate };
+        setUserSession(sessionData);
+        setEmailError('');
+        
+        // Log de connexion initiale et gain d'XP
+        gainXp(50); // XP pour l'inscription
+        if (window.google && google.script) {
+          google.script.run.logUserProgress(emailInput, 'Connexion', 'Démarrage de la formation');
+        }
+      };
+
+      const tabs = [
+        { id: 'prog', icon: 'fa-map-signs', titleId: 'home_prog_title', descId: 'home_prog_desc' },
+        { id: 'obj', icon: 'fa-bullseye', titleId: 'home_obj_title', descId: 'home_obj_desc' },
+        { id: 'agenda', icon: 'fa-list-ol', titleId: 'home_agenda_title', descId: 'home_agenda_desc' },
+        { id: 'howto', icon: 'fa-gamepad', titleId: 'home_howto_title', descId: 'home_howto_desc' }
+      ];
+
+      return (
+        <div className="space-y-6 animate-fade-in pb-10">
+          
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 flex items-center space-x-6">
+            <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner shrink-0">
+              <i className="fas fa-graduation-cap"></i>
+            </div>
+            <div>
+              <h2 className="text-3xl font-extrabold text-slate-800"><T id="home_title" /></h2>
+              <p className="text-slate-600 mt-1"><T id="home_welcome" multiline={true} /></p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* FICHE PÉDAGOGIQUE INTERACTIVE */}
+            <div className="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+              <div className="bg-slate-50 border-b border-slate-200 flex p-2 gap-2 overflow-x-auto">
+                {tabs.map(tab => (
+                  <button 
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap
+                      ${activeTab === tab.id ? 'bg-white text-blue-700 shadow-sm border border-slate-200' : 'text-slate-500 hover:bg-slate-200 hover:text-slate-700'}`}
+                  >
+                    <i className={`fas ${tab.icon} mr-2 ${activeTab === tab.id ? 'text-blue-500' : ''}`}></i>
+                    <T id={tab.titleId} />
+                  </button>
+                ))}
+              </div>
+              <div className="p-8 flex-grow bg-white animate-fade-in min-h-[250px]">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-2 flex items-center">
+                  <i className={`fas ${tabs.find(t=>t.id===activeTab).icon} text-blue-500 mr-2`}></i>
+                  <T id={tabs.find(t=>t.id===activeTab).titleId} />
+                </h3>
+                <div className="text-sm text-slate-600 leading-relaxed space-y-3">
+                  <T id={tabs.find(t=>t.id===activeTab).descId} multiline={true} />
+                </div>
+              </div>
+            </div>
+
+            {/* VALIDATION DE SESSION (Formulaire Email) */}
+            <div className="lg:col-span-5 bg-white p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-emerald-400"></div>
+              
+              <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center">
+                <i className="fas fa-id-badge text-blue-500 mr-2"></i> <T id="home_email_title" />
+              </h3>
+              <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+                <T id="home_email_desc" multiline={true} />
+              </p>
+
+              {!userSession ? (
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div>
+                    <div className="relative">
+                      <i className="fas fa-envelope absolute left-3 top-3.5 text-slate-400"></i>
+                      <input 
+                        type="email" 
+                        placeholder="votre.nom@entreprise.com" 
+                        value={emailInput}
+                        onChange={(e) => setEmailInput(e.target.value)}
+                        className={`w-full pl-10 pr-4 py-3 border rounded-xl text-sm outline-none transition-all
+                          ${emailError ? 'border-red-400 focus:ring-2 focus:ring-red-100' : 'border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100'}`}
+                      />
+                    </div>
+                    {emailError && <p className="text-red-500 text-[10px] mt-1.5 font-bold"><i className="fas fa-exclamation-circle mr-1"></i>{emailError}</p>}
+                  </div>
+                  <button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl shadow-md transition-colors text-sm flex justify-center items-center">
+                    <i className="fas fa-lock-open mr-2"></i> Débloquer la formation
+                  </button>
+                </form>
+              ) : (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 animate-fade-in text-center shadow-inner">
+                  <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i className="fas fa-check"></i>
+                  </div>
+                  <h4 className="font-bold text-emerald-800 text-sm mb-1">Session validée</h4>
+                  <p className="text-[10px] text-emerald-600 font-mono mb-2">{userSession.email}</p>
+                  <div className="bg-emerald-100/50 text-emerald-700 text-[10px] py-1.5 px-3 rounded-lg inline-block border border-emerald-200/50">
+                    <i className="fas fa-clock mr-1"></i> Horodatage : {userSession.timestamp}
+                  </div>
+                </div>
+              )}
+
+              {userSession && (
+                <div className="mt-6 animate-fade-in">
+                  <button onClick={onNext} className="btn-primary w-full shadow-lg py-3.5 text-base bg-blue-600 hover:bg-blue-700">
+                    Démarrer la Partie 1 <i className="fas fa-arrow-right ml-2"></i>
+                  </button>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      );
+    }
+
+    // --- APPLICATION PRINCIPALE ---
+    function App() {
+      const [currentPage, setCurrentPage] = useState('home');
+      const [userSession, setUserSession] = useState(null); // Gère l'accès global
+      
+      const [content, setContent] = useState({});
+      const [isLoading, setIsLoading] = useState(true);
+      const [isEditMode, setIsEditMode] = useState(false);
+      const [isSaving, setIsSaving] = useState(false);
+      
+      // Système Global d'XP (Expérience / Progression)
+      const [xp, setXp] = useState(0);
+      const maxXP = 1000;
+
+      useEffect(() => {
+        // 1. Récupération des textes du CMS
+        google.script.run.withSuccessHandler(data => {
+          setContent(data);
+          window.reactContentContext = data;
+          
+          // 2. Récupération dynamique des codes métiers depuis le GSheet
+          google.script.run.withSuccessHandler(codes => {
+            window.JOB_CODES = codes;
+            setIsLoading(false);
+          }).getJobCodes();
+          
+        }).getContent();
+      }, []);
+
+      const handleSave = () => {
+        setIsSaving(true);
+        google.script.run.withSuccessHandler(() => {
+          setIsSaving(false);
+          setIsEditMode(false);
+          window.reactContentContext = content;
+        }).saveContent(content);
+      };
+
+      // Fonction d'enregistrement des progrès
+      const logProgress = (partName, details) => {
+        if (!userSession) return;
+        if (window.google && google.script) {
+          google.script.run.logUserProgress(userSession.email, partName, JSON.stringify(details));
+        }
+      };
+
+      // Fonction globale pour faire avancer la barre d'XP
+      const gainXp = (amount) => {
+        setXp(prev => Math.min(maxXP, prev + amount));
+      };
+
+      if (isLoading) {
+        return (
+          <div className="flex h-screen items-center justify-center bg-slate-50 flex-col">
+            <i className="fas fa-circle-notch fa-spin text-4xl text-blue-600 mb-4"></i>
+            <p className="text-slate-500 font-medium">Chargement du contenu et des référentiels...</p>
+          </div>
+        );
+      }
+
+      // Verrouillage des pages du menu si pas d'email
+      const isLocked = !userSession;
+
+      return (
+        <window.ContentContext.Provider value={{ content, setContent, isEditMode, logProgress, gainXp }}>
+          <div className="flex h-screen bg-slate-50 overflow-hidden relative">
+            
+            {/* Barre flottante Edition */}
+            <div className="absolute top-4 right-4 z-50 flex items-center space-x-3 bg-white p-2 rounded-lg shadow-lg border border-slate-200">
+              <label className="flex items-center cursor-pointer text-sm font-bold text-slate-700">
+                <div className="relative">
+                  <input type="checkbox" className="sr-only" checked={isEditMode} onChange={() => setIsEditMode(!isEditMode)} />
+                  <div className={`block w-10 h-6 rounded-full transition-colors ${isEditMode ? 'bg-amber-500' : 'bg-slate-300'}`}></div>
+                  <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${isEditMode ? 'transform translate-x-4' : ''}`}></div>
+                </div>
+                <span className="ml-3 mr-2"><i className="fas fa-pen text-amber-500 mr-1"></i> Mode Édition</span>
+              </label>
+              
+              {isEditMode && (
+                <button onClick={handleSave} disabled={isSaving} className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md text-sm font-bold shadow-sm flex items-center transition-colors">
+                  {isSaving ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-save mr-2"></i> Sauvegarder</>}
+                </button>
+              )}
+            </div>
+
+            {/* Menu */}
+            <nav className="w-80 bg-[#0c1e36] text-white flex flex-col shadow-2xl z-20 shrink-0">
+              <div className="p-6 bg-[#081524] flex flex-col items-center border-b border-[#132c4a]">
+                <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center mb-3 shadow-inner">
+                  <i className="fas fa-wind text-blue-500 text-2xl"></i>
+                </div>
+                <h1 className="text-lg font-extrabold tracking-wider text-blue-100"><T id="app_title" /></h1>
+                <p className="text-[10px] text-slate-400 mt-1 uppercase font-semibold"><T id="app_subtitle" /></p>
+              </div>
+
+              <div className="flex-1 overflow-y-auto py-4">
+                <NavItem icon="fa-home" labelId="nav_home" isActive={currentPage === 'home'} onClick={() => setCurrentPage('home')} locked={false} />
+                
+                <div className="px-6 py-2 mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-t border-[#132c4a] pt-4">
+                  <T id="nav_training_plan" />
+                </div>
+                
+                <NavItem icon="fa-sync-alt" labelId="nav_p1" isActive={currentPage === 'part1'} onClick={() => { setCurrentPage('part1'); gainXp(10); }} locked={isLocked} />
+                <NavItem icon="fa-database" labelId="nav_p2" isActive={currentPage === 'part2'} onClick={() => { setCurrentPage('part2'); gainXp(10); }} locked={isLocked} />
+                <NavItem icon="fa-user-cog" labelId="nav_p3" isActive={currentPage === 'part3'} onClick={() => { setCurrentPage('part3'); gainXp(10); }} locked={isLocked} />
+                <NavItem icon="fa-level-up-alt" labelId="nav_p4" isActive={currentPage === 'part4'} onClick={() => { setCurrentPage('part4'); gainXp(10); }} locked={isLocked} />
+                <NavItem icon="fa-tasks" labelId="nav_p5" isActive={currentPage === 'part5'} onClick={() => { setCurrentPage('part5'); gainXp(10); }} locked={isLocked} />
+              </div>
+            </nav>
+
+            {/* Main Content Area (Header + Main) */}
+            <div className="flex flex-col flex-1 overflow-hidden relative">
+              
+              {/* TOP BAR (Visible uniquement si logué) */}
+              {userSession && (
+                <header className="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-8 shrink-0 z-10 animate-fade-in shadow-sm">
+                   
+                   {/* Barre de Progression (XP) */}
+                   <div className="flex items-center gap-4 flex-1 max-w-xl">
+                     <div className="flex items-center gap-2">
+                       <i className="fas fa-trophy text-amber-500"></i>
+                       <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Progression</span>
+                     </div>
+                     <div className="flex-1 h-3.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200 shadow-inner">
+                        <div className="h-full bg-gradient-to-r from-blue-500 to-emerald-400 transition-all duration-700 ease-out relative" style={{ width: `${(xp / maxXP) * 100}%` }}>
+                          <div className="absolute inset-0 bg-white/20 w-full h-full animate-[shimmer_2s_infinite]"></div>
+                        </div>
+                     </div>
+                     <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-100">{xp} / {maxXP} XP</span>
+                   </div>
+
+                   {/* Profil Utilisateur */}
+                   <div className="flex items-center gap-3 ml-8 border-l border-slate-200 pl-8">
+                     <div className="text-right hidden md:block">
+                       <div className="text-sm font-bold text-slate-800">{userSession.email}</div>
+                       <div className="text-[10px] text-slate-500 font-medium">Session Manager S&OP</div>
+                     </div>
+                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 flex items-center justify-center font-bold text-lg border-2 border-white shadow-md">
+                       {userSession.email.charAt(0).toUpperCase()}
+                     </div>
+                   </div>
+
+                </header>
+              )}
+
+              {/* ROUTEUR MAIN */}
+              <main className={`flex-1 overflow-y-auto bg-slate-50 relative p-8 transition-all ${isEditMode ? 'border-4 border-amber-300' : ''}`}>
+                <div className="max-w-6xl mx-auto pt-4">
+                  {currentPage === 'home' && <HomeModule onNext={() => setCurrentPage('part1')} userSession={userSession} setUserSession={setUserSession} gainXp={gainXp} />}
+                  {currentPage === 'part1' && typeof Part1_CycleSOP !== 'undefined' && <Part1_CycleSOP onNext={() => setCurrentPage('part2')} />}
+                  {currentPage === 'part2' && typeof Part2_Capacity !== 'undefined' && <Part2_Capacity onNext={() => setCurrentPage('part3')} />}
+                  {currentPage === 'part3' && typeof Part3_ResourceMgmt !== 'undefined' && <Part3_ResourceMgmt onNext={() => setCurrentPage('part4')} />}
+                  {currentPage === 'part4' && typeof Part4_Advanced !== 'undefined' && <Part4_Advanced onNext={() => setCurrentPage('part5')} />}
+                  {currentPage === 'part5' && typeof Part5_Workload !== 'undefined' && <Part5_Workload onNext={() => {}} userSession={userSession} />}
+                </div>
+              </main>
+
+            </div>
+          </div>
+        </window.ContentContext.Provider>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+
+  <style>
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+  </style>
+</body>
+</html>
