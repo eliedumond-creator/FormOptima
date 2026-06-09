@@ -1,0 +1,207 @@
+<!-- Fichier : Part5.html -->
+<script type="text/babel">
+  function Part5_Workload({ onNext, userSession }) {
+    const [subTab, setSubTab] = React.useState('A');
+    
+    // States for Conclusion / Feedback
+    const [rating, setRating] = React.useState(0);
+    const [hoverRating, setHoverRating] = React.useState(0);
+    const [comment, setComment] = React.useState('');
+    const [isSubmitted, setIsSubmitted] = React.useState(false);
+
+    const { logProgress, gainXp } = React.useContext(window.ContentContext) || {};
+
+    // Faire défiler la page tout en haut au chargement
+    React.useEffect(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
+    const handleSubmitFeedback = () => {
+      if (rating === 0) return;
+      setIsSubmitted(true);
+      if (gainXp) gainXp(200); // Grosse récompense d'XP pour avoir fini !
+      if (logProgress) {
+        logProgress('Partie 5 - Conclusion', { 
+          action: 'Feedback de fin de formation', 
+          note: rating, 
+          commentaire: comment 
+        });
+      }
+    };
+
+    return (
+      <div className="space-y-6 animate-fade-in pb-10">
+        
+        {/* EN-TÊTE PARTIE 5 */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-800 mb-2 flex items-center">
+            <i className="fas fa-tasks text-blue-600 mr-3"></i> 
+            <T id="p5_title" />
+          </h2>
+          <p className="text-slate-600">
+            <T id="p5_desc" multiline={true} />
+          </p>
+          
+          {/* NAVIGATION SOUS-ONGLETS */}
+          <div className="flex flex-wrap gap-2 mt-6">
+            <button onClick={() => setSubTab('A')} className={`px-5 py-2.5 text-sm font-bold rounded-xl transition-all shadow-sm ${subTab==='A' ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              <i className="fas fa-chart-bar mr-2"></i><T id="p5_tab_visualize" />
+            </button>
+            <button onClick={() => setSubTab('B')} className={`px-5 py-2.5 text-sm font-bold rounded-xl transition-all shadow-sm ${subTab==='B' ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              <i className="fas fa-edit mr-2"></i><T id="p5_tab_assign" />
+            </button>
+            <button onClick={() => setSubTab('C')} className={`px-5 py-2.5 text-sm font-bold rounded-xl transition-all shadow-sm ${subTab==='C' ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              <i className="fas fa-flag-checkered mr-2"></i><T id="p5_tab_conclusion" />
+            </button>
+          </div>
+        </div>
+
+        {/* CONTENU : VISUALISER LA CHARGE */}
+        {subTab === 'A' && (
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 animate-fade-in">
+            <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 text-lg flex items-center">
+              <i className="fas fa-chart-bar text-indigo-500 mr-3"></i><T id="p5_visu_title" />
+            </h3>
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+              <T id="p5_visu_desc" multiline={true} />
+            </p>
+            
+            {/* Simulation de tableau de Charge / Capacité */}
+            <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+                  <tr>
+                    <th className="p-4">Code Métier</th>
+                    <th className="p-4 text-center">Mois M</th>
+                    <th className="p-4 text-center">Mois M+1</th>
+                    <th className="p-4 text-center">Mois M+2</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  <tr className="hover:bg-slate-50 transition-colors">
+                    <td className="p-4 font-bold text-slate-800">Project Manager (H110)</td>
+                    <td className="p-4 text-center"><span className="bg-green-100 text-green-800 px-3 py-1 rounded font-mono">+12h</span></td>
+                    <td className="p-4 text-center"><span className="bg-red-100 text-red-800 px-3 py-1 rounded font-mono">-45h</span></td>
+                    <td className="p-4 text-center"><span className="bg-red-100 text-red-800 px-3 py-1 rounded font-mono">-110h</span></td>
+                  </tr>
+                  <tr className="hover:bg-slate-50 transition-colors">
+                    <td className="p-4 font-bold text-slate-800">System Engineer (H212)</td>
+                    <td className="p-4 text-center"><span className="bg-green-100 text-green-800 px-3 py-1 rounded font-mono">+80h</span></td>
+                    <td className="p-4 text-center"><span className="bg-green-100 text-green-800 px-3 py-1 rounded font-mono">+75h</span></td>
+                    <td className="p-4 text-center"><span className="bg-slate-100 text-slate-800 px-3 py-1 rounded font-mono">Equilibré</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="mt-4 text-xs text-slate-500 flex items-center">
+              <i className="fas fa-info-circle mr-2"></i> Les cellules en rouge indiquent un besoin de recrutement, de sous-traitance ou de ré-allocation de charge.
+            </div>
+          </div>
+        )}
+
+        {/* CONTENU : AFFECTER LA CHARGE */}
+        {subTab === 'B' && (
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 animate-fade-in">
+            <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 text-lg flex items-center">
+              <i className="fas fa-edit text-blue-500 mr-3"></i><T id="p5_assign_title" />
+            </h3>
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+              <T id="p5_assign_desc" multiline={true} />
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-200 shadow-sm">
+                <label className="text-xs font-bold text-blue-900 block mb-2">1. Sélectionner le Projet</label>
+                <select className="w-full p-2.5 text-sm border border-blue-300 rounded-lg outline-none bg-white shadow-sm mb-4">
+                  <option>PRJ-2026-X1 - Programme Cryo Advance</option>
+                  <option>PRJ-2026-Y4 - Refonte Système de Test</option>
+                </select>
+
+                <label className="text-xs font-bold text-blue-900 block mb-2">2. Sélectionner la Ressource</label>
+                <select className="w-full p-2.5 text-sm border border-blue-300 rounded-lg outline-none bg-white shadow-sm mb-4">
+                  <option>E. Krafft (H110 - Project Manager)</option>
+                  <option>O. Chabanet (H212 - System Engineer)</option>
+                </select>
+
+                <label className="text-xs font-bold text-blue-900 block mb-2">3. Heures à affecter (Mois M)</label>
+                <input type="number" defaultValue="35" className="w-full p-2.5 text-sm border border-blue-300 rounded-lg outline-none bg-white shadow-sm" />
+              </div>
+              
+              <div className="flex flex-col justify-center items-center bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner">
+                <i className="fas fa-random text-4xl text-slate-300 mb-4"></i>
+                <p className="text-sm text-slate-500 text-center">
+                  L'affectation permet de lier directement la demande issue d'un projet à la capacité nominative disponible d'un collaborateur.
+                </p>
+                <button className="mt-6 btn-primary shadow-md w-full" onClick={() => { if(gainXp) gainXp(25); alert("Simulation d'affectation réussie !")}}>
+                  Simuler l'affectation
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CONTENU : CONCLUSION ET FEEDBACK */}
+        {subTab === 'C' && (
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 animate-fade-in text-center">
+            
+            {!isSubmitted ? (
+              <div className="max-w-xl mx-auto space-y-6">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-emerald-400 text-white rounded-full flex items-center justify-center text-4xl shadow-lg mx-auto mb-4">
+                  <i className="fas fa-award"></i>
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800">Félicitations {userSession?.email.split('@')[0]} !</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Vous êtes arrivé(e) à la fin de ce parcours de formation interactif sur l'outil OPTIMA.
+                  Aidez-nous à nous améliorer en évaluant ce module de formation.
+                </p>
+                
+                {/* ETOILES */}
+                <div className="flex justify-center gap-2 my-6">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button 
+                      key={star}
+                      onClick={() => setRating(star)}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className={`text-4xl transition-all ${star <= (hoverRating || rating) ? 'text-amber-400 scale-110 drop-shadow-md' : 'text-slate-200 hover:scale-110'}`}
+                    >
+                      <i className="fas fa-star"></i>
+                    </button>
+                  ))}
+                </div>
+
+                {/* COMMENTAIRE */}
+                <textarea 
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Un commentaire, une remarque, ou une suggestion d'amélioration ?"
+                  className="w-full p-4 border border-slate-300 rounded-xl text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-slate-50 min-h-[120px]"
+                ></textarea>
+
+                <button 
+                  onClick={handleSubmitFeedback}
+                  disabled={rating === 0}
+                  className={`w-full py-4 rounded-xl font-bold text-base shadow-md transition-colors
+                    ${rating === 0 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700 text-white'}`}
+                >
+                  Envoyer mon évaluation
+                </button>
+              </div>
+            ) : (
+              <div className="max-w-lg mx-auto py-8">
+                <i className="fas fa-check-circle text-6xl text-emerald-500 mb-6 animate-bounce"></i>
+                <h3 className="text-2xl font-bold text-slate-800 mb-4">Merci pour votre retour !</h3>
+                <p className="text-slate-600">
+                  Votre évaluation a été enregistrée avec succès. Vous pouvez maintenant fermer ce portail ou retourner à l'accueil pour revoir des éléments.
+                </p>
+              </div>
+            )}
+
+          </div>
+        )}
+
+      </div>
+    );
+  }
+</script>
