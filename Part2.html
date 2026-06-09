@@ -1,0 +1,545 @@
+<!-- Fichier : Part2.html -->
+<script type="text/babel">
+  function Part2_Capacity({ onNext }) {
+    const [subTab, setSubTab] = React.useState('A');
+
+    // Faire défiler la page tout en haut au chargement de la partie 2
+    React.useEffect(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
+    return (
+      <div className="space-y-6 animate-fade-in pb-10">
+        
+        {/* EN-TÊTE PARTIE 2 */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-800 mb-2 flex items-center">
+            <i className="fas fa-database text-blue-600 mr-3"></i> 
+            <T id="p2_title" />
+          </h2>
+          <p className="text-slate-600">
+            <T id="p2_desc" multiline={true} />
+          </p>
+          
+          {/* NAVIGATION SOUS-ONGLETS */}
+          <div className="flex flex-wrap gap-2 mt-6">
+            <button onClick={() => setSubTab('A')} className={`px-5 py-2.5 text-sm font-bold rounded-xl transition-all shadow-sm ${subTab==='A' ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              <i className="fas fa-sitemap mr-2"></i><T id="p2_tab_a" />
+            </button>
+            <button onClick={() => setSubTab('B')} className={`px-5 py-2.5 text-sm font-bold rounded-xl transition-all shadow-sm ${subTab==='B' ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              <i className="fas fa-calculator mr-2"></i><T id="p2_tab_b" />
+            </button>
+            <button onClick={() => setSubTab('C')} className={`px-5 py-2.5 text-sm font-bold rounded-xl transition-all shadow-sm ${subTab==='C' ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              <i className="fas fa-tasks mr-2"></i><T id="p2_tab_c" />
+            </button>
+          </div>
+        </div>
+
+        {/* CONTENU DYNAMIQUE DES SOUS-ONGLETS */}
+        {subTab === 'A' && <Part2A_Referential />}
+        {subTab === 'B' && <Part2B_Algo />}
+        {subTab === 'C' && <Part2C_Statuses onNext={onNext} />}
+        
+      </div>
+    );
+  }
+
+  // ==========================================
+  // SOUS-ONGLET A : LE RÉFÉRENTIEL 
+  // ==========================================
+  function Part2A_Referential() {
+    const [search, setSearch] = React.useState('');
+
+    // Filtrage étendu sur l'ensemble des champs (Code, Nom, Famille)
+    const codes = window.JOB_CODES || [];
+    const filteredCodes = codes.filter(j => 
+      j.name.toLowerCase().includes(search.toLowerCase()) || 
+      j.code.toLowerCase().includes(search.toLowerCase()) ||
+      j.family.toLowerCase().includes(search.toLowerCase())
+    );
+
+    return (
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 animate-fade-in">
+        
+        {/* COLONNE GAUCHE : STRUCTURE ORGANISATIONNELLE */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 h-full flex flex-col">
+          <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 text-lg flex items-center">
+            <i className="fas fa-sitemap text-blue-500 mr-3"></i><T id="p2_a_org_title" />
+          </h3>
+          <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+            <T id="p2_a_org_desc" multiline={true} />
+          </p>
+
+          {/* Arborescence Visuelle */}
+          <div className="flex-1 space-y-2 mb-6 font-sans">
+            <div className="bg-white border border-blue-200 rounded-xl p-4 flex items-start shadow-sm relative z-10">
+              <div className="bg-blue-100 text-blue-700 w-10 h-10 rounded-lg flex items-center justify-center mr-4 shrink-0"><i className="fas fa-building text-lg"></i></div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-800"><T id="p2_a_bu_box_title" /></h4>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed"><T id="p2_a_bu_box_desc" multiline={true} /></p>
+              </div>
+            </div>
+            
+            <div className="w-0.5 h-4 bg-slate-300 ml-9 -my-2 relative z-0"></div>
+            
+            <div className="bg-white border border-amber-200 rounded-xl p-4 flex items-start shadow-sm ml-4 relative z-10">
+              <div className="absolute -left-4 top-1/2 w-4 h-0.5 bg-slate-300"></div>
+              <div className="bg-amber-100 text-amber-700 w-10 h-10 rounded-lg flex items-center justify-center mr-4 shrink-0"><i className="fas fa-users text-lg"></i></div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-800"><T id="p2_a_dept_box_title" /></h4>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed"><T id="p2_a_dept_box_desc" multiline={true} /></p>
+              </div>
+            </div>
+            
+            <div className="w-0.5 h-4 bg-slate-300 ml-13 -my-2 relative z-0" style={{marginLeft: '3.25rem'}}></div>
+            
+            <div className="bg-white border border-green-200 rounded-xl p-4 flex items-start shadow-sm ml-8 relative z-10">
+              <div className="absolute -left-4 top-1/2 w-4 h-0.5 bg-slate-300"></div>
+              <div className="bg-green-100 text-green-700 w-10 h-10 rounded-lg flex items-center justify-center mr-4 shrink-0"><i className="fas fa-cogs text-lg"></i></div>
+              <div>
+                <h4 className="font-bold text-sm text-slate-800"><T id="p2_a_apu_box_title" /></h4>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed"><T id="p2_a_apu_box_desc" multiline={true} /></p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-xl flex items-start shadow-sm mb-4">
+            <i className="fas fa-user-tie text-purple-500 mt-0.5 mr-3 text-lg"></i>
+            <p className="text-[13px] text-purple-900 font-medium leading-relaxed">
+              <T id="p2_a_manager_note" multiline={true} />
+            </p>
+          </div>
+
+          <div className="bg-slate-50 border-l-4 border-slate-400 p-3 rounded-r-lg flex items-start">
+            <i className="fas fa-lock text-slate-400 mt-0.5 mr-3 text-sm"></i>
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
+              <T id="p2_a_admin_note" multiline={true} />
+            </p>
+          </div>
+        </div>
+
+        {/* COLONNE DROITE : RÉFÉRENTIEL DES MÉTIERS */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 h-full flex flex-col">
+          <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 text-lg flex items-center">
+            <i className="fas fa-id-card-alt text-green-500 mr-3"></i><T id="p2_a_job_title" />
+          </h3>
+          
+          <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+            <T id="p2_a_job_desc" multiline={true} />
+          </p>
+
+          <div className="mb-4 relative">
+            <input 
+              type="text" 
+              placeholder="Rechercher (Code, Nom, Famille)..." 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+              className="w-full border border-slate-300 p-3 pl-10 rounded-xl text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all bg-slate-50" 
+            />
+            <i className="fas fa-search absolute left-4 top-3.5 text-slate-400"></i>
+          </div>
+          
+          {/* Scroll vertical optimisé pour ~10 éléments (max-h-[400px]) */}
+          <div className="overflow-y-auto max-h-[400px] mb-4 border border-slate-200 rounded-xl p-2 bg-slate-50 flex-1 shadow-inner">
+            {filteredCodes.length > 0 ? filteredCodes.map(c => (
+              <div key={c.code} className="text-xs p-3 border-b border-slate-200 last:border-0 text-slate-700 flex justify-between hover:bg-white transition-colors rounded-lg">
+                <span className="flex-1 pr-2 truncate"><strong className="text-blue-900">{c.code}</strong> - {c.name}</span> 
+                <span className="text-slate-500 bg-slate-200/50 px-2 py-1 rounded font-medium whitespace-nowrap">{c.family}</span>
+              </div>
+            )) : <div className="text-xs text-slate-500 p-4 text-center italic"><T id="p2_a_job_empty" /></div>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // SOUS-ONGLET B : L'ALGORITHME CDG
+  // ==========================================
+  function Part2B_Algo() {
+    // Dates de la période comptable
+    const [startDate, setStartDate] = React.useState('2026-02-01');
+    const [endDate, setEndDate] = React.useState('2026-02-28');
+
+    // Variables Centrales (CDG)
+    const [vacation, setVacation] = React.useState(10);
+    const [absenteeism, setAbsenteeism] = React.useState(2);
+
+    // Variables Managériales
+    const [category, setCategory] = React.useState('IC');
+    const [wr, setWr] = React.useState(80);
+    const [exp, setExp] = React.useState(100);
+    const [gen, setGen] = React.useState(10);
+    
+    const ctx = React.useContext(window.ContentContext);
+    const content = ctx ? ctx.content : {};
+
+    // --- Calcul Automatique des Jours Ouvrés ---
+    const calculateWeekdays = (startStr, endStr) => {
+      const s = new Date(startStr);
+      const e = new Date(endStr);
+      if (isNaN(s) || isNaN(e) || s > e) return 0;
+      let count = 0;
+      let cur = new Date(s);
+      while (cur <= e) {
+        const day = cur.getDay();
+        if (day !== 0 && day !== 6) count++;
+        cur.setDate(cur.getDate() + 1);
+      }
+      return count;
+    };
+
+    const workingDays = calculateWeekdays(startDate, endDate);
+
+    // --- Formule S&OP Officielle ---
+    // 1. Facteur Individuel (Kr)
+    const catHours = category === 'IC' ? 42.5 : 37.5; // Heures par semaine
+    const baseHPerDay = catHours / 5; // Heures par jour
+    const kr = baseHPerDay * (wr/100) * (exp/100) * (1 - gen/100);
+    
+    // 2. Facteur Global (Kg)
+    const kg = (1 - vacation/100) * (1 - absenteeism/100);
+    
+    // 3. Capacité Nette
+    const net = workingDays * kr * kg;
+
+    return (
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 animate-fade-in">
+        
+        <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-6 text-xl flex items-center">
+          <i className="fas fa-cogs text-purple-600 mr-3"></i><T id="p2_b_title" />
+        </h3>
+        <p className="text-sm text-slate-700 mb-8 leading-relaxed bg-slate-50 p-5 rounded-xl border border-slate-100">
+          <T id="p2_b_desc" multiline={true} />
+        </p>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          
+          <div className="space-y-6 xl:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Facteurs Globaux (CDG) */}
+              <div className="bg-amber-50/50 p-6 rounded-xl border border-amber-200 shadow-sm flex flex-col">
+                <h4 className="text-sm font-bold text-amber-900 mb-3 flex items-center border-b border-amber-200/50 pb-3">
+                  <i className="fas fa-university mr-2 text-amber-600"></i> <T id="p2_b_cdg_title" />
+                </h4>
+                <p className="text-xs text-amber-800 mb-5 leading-relaxed"><T id="p2_b_cdg_desc" multiline={true} /></p>
+                
+                <div className="space-y-4 bg-white p-4 rounded-lg border border-amber-100 shadow-sm flex-1">
+                  
+                  {/* Période et Jours ouvrés */}
+                  <div className="bg-amber-50 p-3 rounded-lg border border-amber-100">
+                    <label className="text-xs font-bold text-amber-900 block mb-2">Période Comptable :</label>
+                    <div className="flex items-center gap-2 mb-2">
+                      <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="w-full p-1.5 text-xs border border-amber-200 rounded outline-none text-amber-900"/>
+                      <span className="text-amber-500 text-xs">à</span>
+                      <input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="w-full p-1.5 text-xs border border-amber-200 rounded outline-none text-amber-900"/>
+                    </div>
+                    <div className="flex justify-between items-center text-xs font-bold text-amber-900 mt-3 pt-2 border-t border-amber-200/50">
+                      <span><T id="p2_b_label_wd" /></span>
+                      <span className="bg-white px-2 py-1 rounded border border-amber-200 text-amber-700">{workingDays} jours</span>
+                    </div>
+                  </div>
+
+                  {/* Congés */}
+                  <div>
+                    <label className="text-xs font-bold text-amber-900 flex justify-between mb-2 mt-3">
+                      <span><T id="p2_b_label_vac" /></span> <span className="bg-amber-100 px-2 rounded font-mono">{vacation}%</span>
+                    </label>
+                    <input type="range" min="0" max="100" step="5" value={vacation} onChange={e=>setVacation(Number(e.target.value))} className="w-full accent-amber-600" />
+                  </div>
+
+                  {/* Absentéisme */}
+                  <div>
+                    <label className="text-xs font-bold text-amber-900 flex justify-between mb-2">
+                      <span><T id="p2_b_label_abs" /></span> <span className="bg-amber-100 px-2 rounded font-mono">{absenteeism}%</span>
+                    </label>
+                    <input type="range" min="0" max="100" step="1" value={absenteeism} onChange={e=>setAbsenteeism(Number(e.target.value))} className="w-full accent-amber-600" />
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Facteurs Individuels (Manager) */}
+              <div className="bg-blue-50/50 p-6 rounded-xl border border-blue-200 shadow-sm flex flex-col">
+                <h4 className="text-sm font-bold text-blue-900 mb-3 flex items-center border-b border-blue-200/50 pb-3">
+                  <i className="fas fa-user-edit mr-2 text-blue-600"></i> <T id="p2_b_mgr_title" />
+                </h4>
+                <p className="text-[11px] text-blue-800 mb-5 leading-relaxed"><T id="p2_b_mgr_desc" multiline={true} /></p>
+                
+                {/* Grille interne pour optimiser l'espace */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-4 rounded-lg border border-blue-100 shadow-sm flex-1">
+                  
+                  {/* Catégorie */}
+                  <div className="col-span-1 sm:col-span-2">
+                    <label className="text-[11px] font-bold text-blue-900 block mb-1.5"><T id="p2_b_label_cat" /></label>
+                    <select 
+                      value={category} 
+                      onChange={e=>setCategory(e.target.value)} 
+                      className="w-full p-2 text-xs border border-blue-200 rounded-lg outline-none bg-blue-50 text-blue-900"
+                    >
+                      <option value="IC">{content['p2_b_cat_IC'] || '[p2_b_cat_IC]'}</option>
+                      <option value="AMT">{content['p2_b_cat_AMT'] || '[p2_b_cat_AMT]'}</option>
+                      <option value="EO">{content['p2_b_cat_EO'] || '[p2_b_cat_EO]'}</option>
+                    </select>
+                  </div>
+
+                  {/* Temps partiel */}
+                  <div>
+                    <label className="text-[10px] font-bold text-blue-900 flex justify-between mb-1.5">
+                      <span><T id="p2_b_label_wr" /></span> <span className="bg-blue-100 px-1.5 rounded font-mono">{wr}%</span>
+                    </label>
+                    <input type="range" min="20" max="100" step="10" value={wr} onChange={e=>setWr(Number(e.target.value))} className="w-full accent-blue-600" />
+                  </div>
+
+                  {/* Séniorité */}
+                  <div>
+                    <label className="text-[10px] font-bold text-blue-900 flex justify-between mb-1.5">
+                      <span><T id="p2_b_label_exp" /></span> <span className="bg-blue-100 px-1.5 rounded font-mono">{exp}%</span>
+                    </label>
+                    <input type="range" min="50" max="100" step="10" value={exp} onChange={e=>setExp(Number(e.target.value))} className="w-full accent-blue-600" />
+                  </div>
+
+                  {/* Frais Généraux */}
+                  <div className="col-span-1 sm:col-span-2">
+                    <label className="text-[10px] font-bold text-blue-900 flex justify-between mb-1.5">
+                      <span><T id="p2_b_label_gen" /></span> <span className="bg-blue-100 px-1.5 rounded font-mono">{gen}%</span>
+                    </label>
+                    <input type="range" min="0" max="50" step="1" value={gen} onChange={e=>setGen(Number(e.target.value))} className="w-full accent-blue-600" />
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Résultat (Écran LCD) */}
+          <div className="bg-[#0c1e36] text-white p-6 rounded-2xl flex flex-col justify-center items-center text-center shadow-xl relative overflow-hidden border-4 border-[#132c4a]">
+            <div className="absolute top-0 right-0 p-4 opacity-5"><i className="fas fa-microchip text-8xl"></i></div>
+            <i className="fas fa-calculator text-5xl text-blue-400 mb-6 relative z-10 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)]"></i>
+            <span className="text-sm text-blue-200 uppercase tracking-widest mb-3 font-bold relative z-10"><T id="p2_b_sim_title" /></span>
+            
+            <div className="bg-[#040a14] p-5 rounded-xl w-full border-t-2 border-l-2 border-black border-b border-r border-slate-700 shadow-[inset_0_4px_10px_rgba(0,0,0,0.5)] my-2 relative z-10 flex justify-center items-center">
+              <span className="text-5xl font-mono font-bold text-green-400 tracking-wider" style={{ textShadow: '0 0 10px rgba(74, 222, 128, 0.5)' }}>
+                {net.toFixed(0)}<span className="text-3xl ml-1 opacity-80">h</span>
+              </span>
+            </div>
+            
+            <div className="text-[11px] text-slate-400 mt-6 border-t border-slate-700/50 pt-4 w-full relative z-10 flex flex-col items-center gap-1.5">
+              <span className="text-white font-medium mb-1"><i className="fas fa-info-circle mr-1 text-blue-400"></i> Formule d'adéquation :</span>
+              <span>Jours × Kr × Kg</span>
+              <div className="flex gap-4 mt-2 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 w-full justify-center">
+                <span>Kr = {kr.toFixed(2)}h/j</span>
+                <span>Kg = {(kg * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // SOUS-ONGLET C : STATUTS DES RESSOURCES (Matrice avec Vérification)
+  // ==========================================
+  function Part2C_Statuses({ onNext }) {
+    // État complexe pour gérer 3 valeurs par statut (Definition, Capacité, Collaborateur)
+    const [answers, setAnswers] = React.useState({
+      stat0: { def: '', capa: '', collab: '' },
+      stat1: { def: '', capa: '', collab: '' },
+      stat2: { def: '', capa: '', collab: '' },
+      stat5: { def: '', capa: '', collab: '' },
+      stat4: { def: '', capa: '', collab: '' },
+      statEnd: { def: '', capa: '', collab: '' }
+    });
+    
+    // État pour afficher les erreurs suite au clic sur "Vérifier"
+    const [showErrors, setShowErrors] = React.useState(false);
+    
+    const ctx = React.useContext(window.ContentContext);
+    const content = ctx ? ctx.content : {};
+    const logProgress = ctx ? ctx.logProgress : null;
+    
+    // Les définitions officielles mélangées aléatoirement au chargement
+    const definitions = React.useMemo(() => {
+      const defs = [
+        { id: 'opt0', textId: "p2_c_def_0" },
+        { id: 'opt1', textId: "p2_c_def_1" },
+        { id: 'opt2', textId: "p2_c_def_2" },
+        { id: 'opt4', textId: "p2_c_def_4" },
+        { id: 'opt5', textId: "p2_c_def_5" },
+        { id: 'optEnd', textId: "p2_c_def_end" }
+      ];
+      return defs.sort(() => Math.random() - 0.5);
+    }, []);
+
+    // Les réponses correctes attendues selon les règles métiers
+    const correctAnswers = {
+      stat0: { def: 'opt0', capa: 'demande', collab: 'non' },
+      stat1: { def: 'opt1', capa: 'futur', collab: 'non' },
+      stat2: { def: 'opt2', capa: 'futur', collab: 'oui' },
+      stat5: { def: 'opt5', capa: 'actuel', collab: 'oui' },
+      stat4: { def: 'opt4', capa: 'futur', collab: 'oui' },
+      statEnd: { def: 'optEnd', capa: 'non', collab: 'non' }
+    };
+
+    const updateAnswer = (statId, field, value) => {
+      setAnswers(prev => ({ ...prev, [statId]: { ...prev[statId], [field]: value } }));
+      setShowErrors(false); // Réinitialise l'affichage des erreurs dès qu'on modifie un champ
+    };
+
+    const isAllCorrect = Object.keys(correctAnswers).every(key => 
+      answers[key].def === correctAnswers[key].def && 
+      answers[key].capa === correctAnswers[key].capa && 
+      answers[key].collab === correctAnswers[key].collab
+    );
+
+    const handleCheck = () => {
+      setShowErrors(true);
+      
+      // ENREGISTREMENT DE LA VÉRIFICATION DANS LE SUIVI
+      if (logProgress) {
+        logProgress('Partie 2 - Matrice Statuts', { 
+          exercice: 'Matrice à remplir',
+          resultat: isAllCorrect ? 'Succès Complet' : 'Échec ou Incomplet' 
+        });
+      }
+    };
+
+    // Fonction d'aide pour appliquer les couleurs de validation
+    const getSelectClass = (statId, field) => {
+      const val = answers[statId][field];
+      const isCorrect = val === correctAnswers[statId][field];
+
+      if (showErrors && !isCorrect) {
+        // MAUVAISE RÉPONSE OU CHAMP VIDE : ROUGE
+        return 'border-red-500 bg-red-50 text-red-900 ring-2 ring-red-200';
+      }
+      if (showErrors && isCorrect) {
+        // BONNE RÉPONSE : VERT
+        return 'border-green-500 bg-green-50 text-green-900 ring-2 ring-green-200';
+      }
+      if (val !== '') {
+        // REMPLI (sans vérification cliquée) : BLEU
+        return 'border-blue-400 bg-blue-50 text-blue-900 ring-1 ring-blue-100';
+      }
+      // VIDE : DEFAUT
+      return 'border-slate-300 bg-slate-50 text-slate-500 hover:border-slate-400';
+    };
+
+    // Ordre d'affichage (Ongoing 5 est au-dessus de Pending 4)
+    const statusesToDisplay = [ 
+      { id: 'stat0', labelId: "p2_c_stat_0", icon: "fa-pencil-ruler", color: "slate" }, 
+      { id: 'stat1', labelId: "p2_c_stat_1", icon: "fa-user-check", color: "indigo" }, 
+      { id: 'stat2', labelId: "p2_c_stat_2", icon: "fa-plane-arrival", color: "sky" }, 
+      { id: 'stat5', labelId: "p2_c_stat_5", icon: "fa-play-circle", color: "green" }, 
+      { id: 'stat4', labelId: "p2_c_stat_4", icon: "fa-hourglass-half", color: "amber" }, 
+      { id: 'statEnd', labelId: "p2_c_stat_end", icon: "fa-door-closed", color: "red" }
+    ];
+
+    return (
+      <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 animate-fade-in">
+        <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-5 text-xl flex items-center">
+          <i className="fas fa-network-wired text-green-600 mr-3"></i><T id="p2_c_title" />
+        </h3>
+        
+        {/* Explication du flux d'affectation */}
+        <div className="bg-blue-50 border border-blue-200 p-5 rounded-xl mb-8 flex items-start shadow-sm">
+          <i className="fas fa-info-circle text-blue-500 text-2xl mr-4 mt-1"></i>
+          <div>
+            <h4 className="font-bold text-blue-900 mb-2"><T id="p2_c_flow_title" /></h4>
+            <p className="text-sm text-blue-800 leading-relaxed">
+              <T id="p2_c_flow_desc" multiline={true} />
+            </p>
+          </div>
+        </div>
+
+        <p className="text-sm text-slate-700 mb-6 font-medium px-2">
+          Complétez la matrice ci-dessous pour chaque statut :
+        </p>
+
+        <div className="space-y-6 max-w-5xl mx-auto">
+          {statusesToDisplay.map(stat => (
+            <div key={stat.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 hover:shadow-md transition-all group">
+              {/* Ligne 1 : Titre du statut */}
+              <div className={`font-bold text-sm text-${stat.color}-700 flex items-center bg-${stat.color}-50 px-4 py-2.5 rounded-lg border border-${stat.color}-100 mb-4`}>
+                <i className={`fas ${stat.icon} mr-3 w-5 text-center text-lg`}></i> <T id={stat.labelId} />
+              </div>
+              
+              {/* Ligne 2 : Les 3 choix */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {/* Définition */}
+                <select 
+                  className={`w-full p-3 text-xs rounded-lg outline-none transition-all shadow-inner font-medium ${getSelectClass(stat.id, 'def')}`}
+                  value={answers[stat.id].def} onChange={e => updateAnswer(stat.id, 'def', e.target.value)}
+                >
+                  <option value="">-- 1. Choisir la Définition --</option>
+                  {definitions.map(d => (
+                    <option key={d.id} value={d.id}>{content[d.textId] || `[${d.textId}]`}</option>
+                  ))}
+                </select>
+
+                {/* Prise en compte Capacité */}
+                <select 
+                  className={`w-full p-3 text-xs rounded-lg outline-none transition-all shadow-inner font-medium ${getSelectClass(stat.id, 'capa')}`}
+                  value={answers[stat.id].capa} onChange={e => updateAnswer(stat.id, 'capa', e.target.value)}
+                >
+                  <option value="">-- 2. Prise en compte dans la capacité --</option>
+                  <option value="actuel">Oui (actuellement)</option>
+                  <option value="futur">Oui (Dans le futur)</option>
+                  <option value="demande">Capacité demandée</option>
+                  <option value="non">Non</option>
+                </select>
+
+                {/* Affectation Collaborateur */}
+                <select 
+                  className={`w-full p-3 text-xs rounded-lg outline-none transition-all shadow-inner font-medium ${getSelectClass(stat.id, 'collab')}`}
+                  value={answers[stat.id].collab} onChange={e => updateAnswer(stat.id, 'collab', e.target.value)}
+                >
+                  <option value="">-- 3. Un collaborateur est affecté ? --</option>
+                  <option value="oui">Oui</option>
+                  <option value="non">Non</option>
+                </select>
+
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Bloc d'actions (Vérifier / Suivant) */}
+        <div className="mt-8 flex flex-col md:flex-row justify-between items-center border-t border-slate-100 pt-6 gap-6">
+          <div className="text-sm font-bold flex-1">
+            {showErrors && isAllCorrect ? (
+              <span className="text-green-700 bg-green-50 px-5 py-3 rounded-xl border border-green-200 flex items-center shadow-sm animate-fade-in">
+                <i className="fas fa-check-circle mr-3 text-2xl"></i> Excellent ! Le cycle de vie complet des ressources est acquis.
+              </span>
+            ) : (
+              <span className="text-slate-500 flex items-center bg-slate-50 px-5 py-3 rounded-xl border border-slate-100">
+                <i className="fas fa-info-circle mr-3 text-xl text-blue-400"></i> Remplissez la matrice puis vérifiez vos réponses.
+              </span>
+            )}
+          </div>
+          
+          <div className="flex gap-4 w-full md:w-auto">
+            <button 
+              onClick={handleCheck} 
+              className="w-full md:w-auto shadow-md py-3 px-6 text-base bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-bold transition-all"
+            >
+              <i className="fas fa-search mr-2"></i> Vérifier
+            </button>
+            <button 
+              onClick={onNext} 
+              disabled={!isAllCorrect} 
+              className="btn-primary w-full md:w-auto shadow-md py-3 px-6 text-base"
+            >
+              <T id="p2_c_btn_next" /> <i className="fas fa-arrow-right ml-2"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+</script>
