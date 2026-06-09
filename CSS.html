@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Formation OPTIMA - Portail Manager S&OP</title>
+  
+  <!-- CDN Links -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    .btn-primary { 
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center; 
+        padding: 0.65rem 1.5rem; 
+        background-color: #1e3a8a; 
+        color: white; 
+        font-weight: 700; 
+        font-size: 0.875rem; 
+        border-radius: 0.5rem; 
+        transition: all 0.2s; 
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); 
+        cursor: pointer; 
+    }
+    .btn-primary:hover:not(:disabled) { 
+        background-color: #172554; 
+        transform: translateY(-1px); 
+    }
+    .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans overflow-hidden">
+  
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // --- DONNÉES ET RÉFÉRENTIELS ---
+    const DEPARTMENTS = [
+      { code: 'CTECH', name: 'CTECH - CryoTech Deeptech', genDefault: 10 },
+      { code: 'CTURBO', name: 'CTURBO - CryoTurbo & Turbines', genDefault: 12 },
+      { code: 'SPAT', name: 'SPAT - Space Domain', genDefault: 8 },
+      { code: 'INNOV', name: 'INNOV - Innovation', genDefault: 15 }
+    ];
+
+    const JOB_CODES = [
+      { code: 'ENG-MEC', name: 'Mechanical Engineer', family: 'Engineering' },
+      { code: 'ENG-CRY', name: 'Cryogenics Expert', family: 'Engineering' },
+      { code: 'MNG-PRJ', name: 'Project Manager', family: 'Management' },
+      { code: 'TEC-TST', name: 'Testing Technician', family: 'Operations' },
+      { code: 'ADM-FIN', name: 'Financial Controller', family: 'Support' }
+    ];
+
+    const WORKING_CATEGORIES = [
+      { code: 'EO', label: 'EO - Ouvrier / Employé (37.5h)', dailyHours: 7.5 },
+      { code: 'AMT', label: 'AMT - Technicien / Superv. (42.5h)', dailyHours: 8.5 },
+      { code: 'IC', label: 'IC - Ingénieur / Cadre (42.5h)', dailyHours: 8.5 }
+    ];
+
+    const INITIAL_TEAM = [
+      { id: 'AT20002', name: 'Olivier Chabanet', bu: 'CTECH', job: 'ENG-CRY', category: 'IC', workingRate: 100, expLevel: 100, status: 5, allocated: 80 },
+      { id: 'AT21002', name: 'Elodie Krafft', bu: 'CTURBO', job: 'ENG-MEC', category: 'AMT', workingRate: 100, expLevel: 100, status: 5, allocated: 110 },
+      { id: 'AT13001', name: 'Josue Anglio', bu: 'SPAT', job: 'MNG-PRJ', category: 'IC', workingRate: 100, expLevel: 80, status: 5, allocated: 0 }
+    ];
+
+    const INITIAL_PROJECTS = [
+      { id: 'PRJ-01', name: 'Cryo-Reservoir Ariane 6', sold: true },
+      { id: 'PRJ-02', name: 'R&D Hydrogène Liquide', sold: false }
+    ];
+
+    // --- APPLICATION PRINCIPALE ---
+    function App() {
+      const [activeTab, setActiveTab] = useState('home');
+
+      return (
+        <div className="flex h-screen bg-slate-50 overflow-hidden">
+          
+          {/* Menu de Navigation */}
+          <nav className="w-80 bg-[#0c1e36] text-white flex flex-col shadow-2xl z-20 shrink-0">
+            <div className="p-6 bg-[#081524] flex flex-col items-center border-b border-[#132c4a]">
+              <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center mb-3 shadow-inner">
+                {/* Fallback FontAwesome icon si le SVG Wikipedia ne charge pas */}
+                <i className="fas fa-wind text-blue-500 text-2xl"></i>
+              </div>
+              <h1 className="text-lg font-extrabold tracking-wider text-blue-100">OPTIMA S&OP</h1>
+              <p className="text-[10px] text-slate-400 mt-1 uppercase font-semibold">Parcours Manager</p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-4">
+              <NavItem icon="fa-home" label="Accueil & Guide" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+              <div className="px-6 py-2 mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-t border-[#132c4a] pt-4">Plan de Formation</div>
+              <NavItem icon="fa-sync-alt" label="P1: Le Cycle S&OP" isActive={activeTab === 'p1'} onClick={() => setActiveTab('p1')} />
+              <NavItem icon="fa-database" label="P2: La Capacité" isActive={activeTab === 'p2'} onClick={() => setActiveTab('p2')} />
+              <NavItem icon="fa-user-cog" label="P3: Gestion de Ressource" isActive={activeTab === 'p3'} onClick={() => setActiveTab('p3')} />
+              <NavItem icon="fa-level-up-alt" label="P4: Gestion Avancée" isActive={activeTab === 'p4'} onClick={() => setActiveTab('p4')} />
+              <NavItem icon="fa-tasks" label="P5: Affectation de Charge" isActive={activeTab === 'p5'} onClick={() => setActiveTab('p5')} />
+            </div>
+          </nav>
+
+          {/* Contenu Principal */}
+          <main className="flex-1 overflow-y-auto bg-slate-50 relative p-8">
+            <div className="max-w-6xl mx-auto">
+              {activeTab === 'home' && <HomeModule onNext={() => setActiveTab('p1')} />}
+              {activeTab === 'p1' && <Part1_CycleSOP onNext={() => setActiveTab('p2')} />}
+              {activeTab === 'p2' && <Part2_Capacity onNext={() => setActiveTab('p3')} />}
+              {activeTab === 'p3' && <Part3_ResourceMgmt onNext={() => setActiveTab('p4')} />}
+              {activeTab === 'p4' && <Part4_Advanced onNext={() => setActiveTab('p5')} />}
+              {activeTab === 'p5' && <Part5_Workload onComplete={() => alert('Félicitations, vous avez terminé le parcours avec succès !')} />}
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // ACCUEIL
+    // ==========================================
+    function HomeModule({ onNext }) {
+      return (
+        <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 animate-fade-in">
+          <div className="flex items-center space-x-4 mb-6">
+            <i className="fas fa-graduation-cap text-blue-900 text-5xl"></i>
+            <h2 className="text-3xl font-extrabold text-slate-900">Formation OPTIMA S&OP</h2>
+          </div>
+          <p className="text-lg text-slate-600 mb-6 leading-relaxed">
+            Bienvenue dans le nouveau parcours de formation pour les Managers. Ce programme a été repensé en 5 parties pour couvrir l'intégralité de vos responsabilités dans OPTIMA.
+          </p>
+
+          <div className="mb-10">
+            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
+                <i className="fas fa-file-powerpoint text-blue-600 mr-3"></i> Support de Présentation
+            </h3>
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-200 shadow-md bg-slate-100 flex items-center justify-center">
+              {/* Espace dédié pour l'iframe Google Slides */}
+              <iframe 
+                src="https://docs.google.com/presentation/d/1TZ8HZbxBjEh_fRQmcApdddY3JHTrroq-SzSkAYfQUf8/embed?start=false&loop=false&delayms=3000" 
+                frameBorder="0" 
+                width="100%" 
+                height="100%" 
+                allowFullScreen={true}
+                className="absolute top-0 left-0 w-full h-full">
+              </iframe>
+            </div>
+          </div>
+
+          <button onClick={onNext} className="btn-primary">
+            Démarrer la Partie 1 <i className="fas fa-arrow-right ml-2"></i>
+          </button>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // PARTIE 1 : LE CYCLE S&OP
+    // ==========================================
+    function Part1_CycleSOP({ onNext }) {
+      const [puzzleItems, setPuzzleItems] = useState([
+        { id: 3, text: "Affectation des ressources aux appels de charge (Manager)", order: null },
+        { id: 1, text: "Génération et mise à jour de la Capacité (Manager)", order: null },
+        { id: 4, text: "Arbitrage et validation S&OP (Direction)", order: null },
+        { id: 2, text: "Ingestion et évaluation des plans de charge (Project Managers)", order: null }
+      ]);
+      const [currentOrder, setCurrentOrder] = useState(1);
+      const [isSuccess, setIsSuccess] = useState(false);
+
+      const handleSelect = (item) => {
+        if (item.order !== null) return;
+        const newItems = puzzleItems.map(p => p.id === item.id ? { ...p, order: currentOrder } : p);
+        setPuzzleItems(newItems);
+        setCurrentOrder(currentOrder + 1);
+
+        if (currentOrder === 4) {
+          const correct = newItems.every(p => p.id === p.order);
+          if (correct) setIsSuccess(true);
+          else {
+            setTimeout(() => {
+              setPuzzleItems(puzzleItems.map(p => ({ ...p, order: null })));
+              setCurrentOrder(1);
+            }, 1500);
+          }
+        }
+      };
+
+      return (
+        <div className="space-y-6 animate-fade-in">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2"><i className="fas fa-sync-alt text-blue-600 mr-2"></i> Partie 1 : Le Cycle S&OP</h2>
+            <p className="text-slate-600">Rappel sur le processus mensuel de Sales & Operations Planning.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+              <h3 className="font-bold text-slate-800 border-b pb-2 mb-4">Le Rôle du Manager</h3>
+              <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+                Dans OPTIMA, le S&OP est la rencontre entre <strong>l'Offre (La Capacité)</strong> et la <strong>Demande (La Charge / Workload)</strong>.
+              </p>
+              <ul className="space-y-3 text-sm text-slate-700">
+                <li className="flex items-start"><i className="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Il génère la capacité :</strong> En créant ses ressources, gérant les absences et validant les contrats.</li>
+                <li className="flex items-start"><i className="fas fa-check-circle text-green-500 mt-1 mr-2"></i> <strong>Il affecte les ressources :</strong> En répartissant les heures disponibles de son équipe sur les projets en attente.</li>
+              </ul>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+              <h3 className="font-bold text-slate-800 border-b pb-2 mb-4"><i className="fas fa-puzzle-piece text-purple-600 mr-2"></i> Jeu : Remettre le cycle en ordre</h3>
+              <p className="text-xs text-slate-500 mb-4">Cliquez sur les étapes dans l'ordre chronologique du processus S&OP mensuel.</p>
+              
+              <div className="space-y-2">
+                {puzzleItems.map(item => (
+                  <button 
+                    key={item.id} 
+                    onClick={() => handleSelect(item)}
+                    disabled={item.order !== null}
+                    className={`w-full text-left p-3 text-sm rounded-lg border transition-all ${item.order !== null ? 'bg-blue-50 border-blue-200 text-blue-800 cursor-default' : 'bg-slate-50 border-slate-200 hover:border-blue-400 hover:shadow-sm'}`}
+                  >
+                    {item.order !== null && <span className="inline-block w-5 h-5 bg-blue-600 text-white text-center rounded-full text-xs leading-5 mr-2">{item.order}</span>}
+                    {item.text}
+                  </button>
+                ))}
+              </div>
+
+              {currentOrder > 4 && !isSuccess && <p className="text-red-500 text-xs mt-3 font-bold text-center animate-pulse">Ordre incorrect, réinitialisation...</p>}
+              {isSuccess && (
+                <div className="mt-4 p-3 bg-green-100 text-green-800 rounded-lg text-sm font-bold text-center animate-fade-in border border-green-200">
+                  <i className="fas fa-check-circle mr-2"></i> Parfait ! Le cycle S&OP est maîtrisé.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button onClick={onNext} className="btn-primary" disabled={!isSuccess}>Passer à la Partie 2 <i className="fas fa-arrow-right ml-2"></i></button>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // PARTIE 2 : LA CAPACITÉ DANS OPTIMA
+    // ==========================================
+    function Part2_Capacity({ onNext }) {
+      const [subTab, setSubTab] = useState('A');
+
+      return (
+        <div className="space-y-6 animate-fade-in">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2"><i className="fas fa-database text-blue-600 mr-2"></i> Partie 2 : La Capacité dans OPTIMA</h2>
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setSubTab('A')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${subTab==='A' ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>A. Le Référentiel</button>
+              <button onClick={() => setSubTab('B')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${subTab==='B' ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>B. L'Algorithme (CDG)</button>
+              <button onClick={() => setSubTab('C')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${subTab==='C' ? 'bg-blue-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>C. Statuts des Ressources</button>
+            </div>
+          </div>
+
+          {subTab === 'A' && <Part2A_Referential />}
+          {subTab === 'B' && <Part2B_Algo />}
+          {subTab === 'C' && <Part2C_Statuses onNext={onNext} />}
+        </div>
+      );
+    }
+
+    function Part2A_Referential() {
+      const [search, setSearch] = useState('');
+      const [requested, setRequested] = useState(false);
+
+      const filteredCodes = JOB_CODES.filter(j => j.name.toLowerCase().includes(search.toLowerCase()) || j.code.toLowerCase().includes(search.toLowerCase()));
+
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 className="font-bold text-slate-800 border-b pb-2 mb-4">BU & Départements</h3>
+            <p className="text-sm text-slate-600 mb-4">La structure organisationnelle définit le rattachement de la capacité. Le Département (ou Sub Cost Center) est crucial pour la comptabilité.</p>
+            <div className="bg-slate-50 p-3 rounded-lg border text-xs">
+              <strong>Rappel Admin :</strong> Seuls les Administrateurs peuvent créer de nouvelles BU ou Départements.
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 className="font-bold text-slate-800 border-b pb-2 mb-4">Recherche de Codes Métiers (Job Roles)</h3>
+            <div className="mb-4 relative">
+              <input type="text" placeholder="Rechercher un code (ex: ENG...)" value={search} onChange={e=>setSearch(e.target.value)} className="w-full border p-2 pl-8 rounded text-sm outline-none focus:border-blue-500 transition-colors" />
+              <i className="fas fa-search absolute left-3 top-3 text-slate-400"></i>
+            </div>
+            <div className="h-32 overflow-y-auto mb-4 border rounded-lg p-2 bg-slate-50">
+              {filteredCodes.length > 0 ? filteredCodes.map(c => (
+                <div key={c.code} className="text-xs p-1.5 border-b last:border-0 text-slate-700 flex justify-between">
+                  <span><strong>{c.code}</strong> - {c.name}</span> <span className="text-slate-400">{c.family}</span>
+                </div>
+              )) : <div className="text-xs text-slate-500 p-2">Aucun code trouvé.</div>}
+            </div>
+            
+            {search && filteredCodes.length === 0 && !requested && (
+              <button onClick={() => setRequested(true)} className="w-full bg-amber-100 hover:bg-amber-200 text-amber-800 text-sm font-bold py-2 rounded transition-colors">
+                <i className="fas fa-envelope-open-text mr-2"></i> Demander la création de ce code à l'Admin
+              </button>
+            )}
+            {requested && <div className="text-xs font-bold text-green-600 bg-green-50 p-2 rounded animate-fade-in"><i className="fas fa-check mr-1"></i> Demande envoyée au Solution Owner.</div>}
+          </div>
+        </div>
+      );
+    }
+
+    function Part2B_Algo() {
+      const [wr, setWr] = useState(80);
+      const [exp, setExp] = useState(100);
+      const [vacation, setVacation] = useState(10);
+      
+      const baseH = 20 * 8.5; // 20 jours * 42.5h(IC)/5
+      const kr = (wr/100) * (exp/100) * (1 - 0.10); // GEN fixe à 10%
+      const kg = (1 - vacation/100);
+      const net = baseH * kr * kg;
+
+      return (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 animate-fade-in flex flex-col md:flex-row gap-6">
+          <div className="flex-1 space-y-4">
+            <h3 className="font-bold text-slate-800 border-b pb-2">Les règles de calcul</h3>
+            <p className="text-sm text-slate-600">Le calcul de capacité repose sur des variables locales et macroscopiques :</p>
+            <ul className="text-xs text-slate-600 list-disc pl-5 space-y-2">
+              <li><strong>Données CDG :</strong> Taux d'absentéisme, Calendrier comptable (un mois S&OP est entre 2 clôtures d'heures).</li>
+              <li><strong>Courbes de congés lissés :</strong> OPTIMA refuse le micro-management. Le CDG définit un % de congés moyen par mois (ex: 20% en Août).</li>
+              <li><strong>Variables d'entrée :</strong> Temps partiel, Efficacité, Frais Généraux.</li>
+            </ul>
+            <div className="bg-blue-50 p-4 rounded-xl mt-4 border border-blue-100">
+              <label className="text-xs font-bold text-blue-900 block mb-1">Working Rate (%) : {wr}%</label>
+              <input type="range" min="50" max="100" step="10" value={wr} onChange={e=>setWr(Number(e.target.value))} className="w-full mb-3 accent-blue-600" />
+              
+              <label className="text-xs font-bold text-blue-900 block mb-1">Congés Lissés CDG (%) : {vacation}%</label>
+              <input type="range" min="0" max="50" step="5" value={vacation} onChange={e=>setVacation(Number(e.target.value))} className="w-full accent-blue-600" />
+            </div>
+          </div>
+          <div className="w-full md:w-64 bg-slate-800 text-white p-6 rounded-xl flex flex-col justify-center items-center text-center shadow-inner">
+            <i className="fas fa-calculator text-3xl text-blue-400 mb-3"></i>
+            <span className="text-xs text-slate-300 uppercase tracking-widest mb-1">Capacité Nette</span>
+            <span className="text-4xl font-mono font-bold text-green-400">{net.toFixed(0)}h</span>
+            <span className="text-[10px] text-slate-400 mt-4 border-t border-slate-600 pt-2 w-full">Sur un mois comptable de 20j (IC/AMT)</span>
+          </div>
+        </div>
+      );
+    }
+
+    function Part2C_Statuses({ onNext }) {
+      const [answers, setAnswers] = useState({ 0: '', 1: '', 5: '', 11: '' });
+      
+      const definitions = [
+        { id: 'defA', text: "Le collaborateur est actif et produit au quotidien." },
+        { id: 'defB', text: "Brouillon, la ressource ne génère aucune capacité." },
+        { id: 'defC', text: "Demande de ressource approuvée, modélise le besoin futur." },
+        { id: 'defD', text: "Absence prolongée, la capacité tombe à 0h." }
+      ];
+
+      const checkAnswers = () => {
+        return answers[0] === 'defB' && answers[1] === 'defC' && answers[5] === 'defA' && answers[11] === 'defD';
+      };
+
+      return (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 animate-fade-in">
+          <h3 className="font-bold text-slate-800 border-b pb-2 mb-4">Exercice : Relier les statuts à leur définition</h3>
+          <div className="space-y-4 max-w-2xl">
+            {[ { id: 0, label: "0 - Draft" }, { id: 1, label: "1 - Validated" }, { id: 5, label: "5 - Ongoing" }, { id: 11, label: "11 - On temporary leave" }].map(stat => (
+              <div key={stat.id} className="flex flex-col md:flex-row md:items-center gap-3 bg-slate-50 p-3 rounded-lg border">
+                <div className="font-bold text-sm text-blue-900 w-48">{stat.label}</div>
+                <select 
+                  className={`flex-1 p-2 text-xs border rounded outline-none transition-colors ${answers[stat.id] ? 'border-blue-500 bg-blue-50' : 'border-slate-300'}`}
+                  value={answers[stat.id]} onChange={e => setAnswers({...answers, [stat.id]: e.target.value})}
+                >
+                  <option value="">-- Sélectionnez la bonne définition --</option>
+                  {definitions.map(d => <option key={d.id} value={d.id}>{d.text}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-col md:flex-row justify-between items-center border-t pt-4 gap-4">
+            <span className="text-sm font-bold text-slate-500">
+              {checkAnswers() ? <span className="text-green-600"><i className="fas fa-check-circle"></i> Tout est correct !</span> : "Complétez le quiz pour continuer."}
+            </span>
+            <button onClick={onNext} disabled={!checkAnswers()} className="btn-primary w-full md:w-auto">
+              Passer à la Partie 3 <i className="fas fa-arrow-right ml-2"></i>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // PARTIE 3 : LA GESTION D'UNE RESSOURCE
+    // ==========================================
+    function Part3_ResourceMgmt({ onNext }) {
+      const [step, setStep] = useState(1);
+
+      return (
+        <div className="space-y-6 animate-fade-in">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2"><i className="fas fa-user-cog text-blue-600 mr-2"></i> Partie 3 : Gestion complète d'une ressource</h2>
+            <p className="text-slate-600 text-sm">Parcourez les actions clés du cycle de vie d'un collaborateur dans l'interface OPTIMA.</p>
+          </div>
+
+          <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+            {[1,2,3,4].map(s => (
+              <button key={s} onClick={() => setStep(s)} className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${step === s ? 'bg-purple-900 text-white shadow-md' : 'bg-white border text-slate-500 hover:bg-slate-100'}`}>
+                {s === 1 && "1. Créer & Affecter"}
+                {s === 2 && "2. Modifier / Arrivée"}
+                {s === 3 && "3. Indisponibilité"}
+                {s === 4 && "4. Fin / Départ"}
+              </button>
+            ))}
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 min-h-[300px]">
+            {step === 1 && (
+              <div className="animate-fade-in space-y-4">
+                <h3 className="font-bold text-slate-800"><i className="fas fa-user-plus mr-2 text-green-600"></i> Créer et Affecter</h3>
+                <p className="text-sm text-slate-600">La création d'une ressource génère une ligne vide (brouillon). Ensuite, il faut l'<strong>affecter</strong> (Staffing physique).</p>
+                <ul className="text-xs text-slate-600 list-disc pl-5 space-y-2">
+                  <li><strong>Créer un profil interne :</strong> Recherche directe dans l'annuaire de l'entreprise (CARM). Les données (Nom, Email) sont synchronisées.</li>
+                  <li><strong>Créer un externe :</strong> Saisie manuelle si l'externe n'est pas encore dans CARM.</li>
+                  <li><strong>Réaffecter :</strong> Changer le collaborateur physique assigné à un "siège" capacitaire S&OP.</li>
+                </ul>
+              </div>
+            )}
+            {step === 2 && (
+              <div className="animate-fade-in space-y-4">
+                <h3 className="font-bold text-slate-800"><i className="fas fa-user-edit mr-2 text-blue-600"></i> Modification et Arrivée</h3>
+                <p className="text-sm text-slate-600">Le profil d'une ressource évolue au fil du temps.</p>
+                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                  <h4 className="text-xs font-bold text-blue-900 mb-1">Prévoir l'Arrivée (Waiting Real Arrival)</h4>
+                  <p className="text-[11px] text-blue-800">Le manager planifie une date future. La capacité ne s'activera qu'à cette date.</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <h4 className="text-xs font-bold text-slate-700 mb-1">Modifier un contrat</h4>
+                  <p className="text-[11px] text-slate-600">Le manager peut ajuster le <em>Working Rate</em> (ex: passage à temps partiel) en appliquant obligatoirement une <strong>Date d'effectivité</strong>.</p>
+                </div>
+              </div>
+            )}
+            {step === 3 && (
+              <div className="animate-fade-in space-y-4">
+                <h3 className="font-bold text-slate-800"><i className="fas fa-bed mr-2 text-orange-500"></i> Mettre indisponible</h3>
+                <p className="text-sm text-slate-600">Gestion des arrêts majeurs (Maladie, Maternité).</p>
+                <p className="text-xs bg-orange-50 text-orange-800 p-4 rounded-xl border border-orange-200 leading-relaxed">
+                  Le statut <strong>11 - On temporary leave</strong> met la capacité à 0h. Le manager doit saisir une date de début et, si connue, une date de fin. L'application gérera automatiquement le retour à l'état actif (Ongoing).
+                </p>
+              </div>
+            )}
+            {step === 4 && (
+              <div className="animate-fade-in space-y-4">
+                <h3 className="font-bold text-slate-800"><i className="fas fa-door-open mr-2 text-red-600"></i> Prévoir la fin ou le départ</h3>
+                <p className="text-sm text-slate-600">Clôture proprement la capacité pour le futur.</p>
+                <ul className="text-xs text-slate-600 list-disc pl-5 space-y-3">
+                  <li><strong>Prévoir le départ :</strong> Insère une date de fin. Le statut passera automatiquement à <em>10 - Ended</em> le jour J.</li>
+                  <li><strong>Annuler (Canceled) :</strong> Utilisé si un recrutement validé est finalement annulé avant même l'arrivée du collaborateur.</li>
+                </ul>
+                <div className="mt-8 flex justify-end pt-4 border-t">
+                  <button onClick={onNext} className="btn-primary">Passer à la Partie 4 <i className="fas fa-arrow-right ml-2"></i></button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // PARTIE 4 : GESTION AVANCÉE
+    // ==========================================
+    function Part4_Advanced({ onNext }) {
+      const [expLevel, setExpLevel] = useState(70);
+
+      return (
+        <div className="space-y-6 animate-fade-in">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2"><i className="fas fa-level-up-alt text-blue-600 mr-2"></i> Partie 4 : Gestion Avancée</h2>
+            <p className="text-slate-600 text-sm">Mobilités, multi-métiers et courbes d'apprentissage.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Mobilité */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+              <h3 className="font-bold text-slate-800 border-b pb-2"><i className="fas fa-exchange-alt mr-2 text-purple-600"></i> Mobilité & Transferts</h3>
+              <p className="text-xs text-slate-600">OPTIMA sépare la gestion RH de la gestion S&OP :</p>
+              <div className="bg-slate-50 p-3 rounded-lg text-xs border border-slate-100">
+                <strong className="text-slate-800">Prêt (Délégation) :</strong> Transfert temporaire de la capacité et du coût sans changer de manager d'origine.
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg text-xs border border-slate-100">
+                <strong className="text-slate-800">Transfert Définitif :</strong> Mutation. Changement irrévocable de BU, Cost Center et Manager à la date prévue.
+              </div>
+              <div className="bg-slate-50 p-3 rounded-lg text-xs border border-slate-100">
+                <strong className="text-slate-800">Multi-métier :</strong> Une ressource peut être scindée (ex: 50% Management, 50% Engineering) en créant deux fiches distinctes rattachées au même identifiant CARM.
+              </div>
+            </div>
+
+            {/* Courbe d'apprentissage */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+              <h3 className="font-bold text-slate-800 border-b pb-2"><i className="fas fa-chart-line mr-2 text-green-600"></i> Montée en compétences</h3>
+              <p className="text-xs text-slate-600 mb-2">Simulez l'évolution de la séniorité d'un Junior au fil des mois.</p>
+              
+              <div className="space-y-4 bg-blue-50 p-5 rounded-xl border border-blue-100">
+                <label className="text-xs font-bold text-blue-900 block">Experience Level : {expLevel}%</label>
+                <input type="range" min="50" max="100" step="10" value={expLevel} onChange={e=>setExpLevel(Number(e.target.value))} className="w-full accent-blue-600" />
+                <div className="flex justify-between text-[10px] text-slate-500 font-bold px-1">
+                  <span>Stagiaire (50)</span><span>Junior (70)</span><span>Senior (100)</span>
+                </div>
+                <div className="pt-3 border-t border-blue-200">
+                  <p className="text-xs font-bold text-green-700 flex items-center"><i className="fas fa-bolt mr-2"></i> Rendement S&OP : {(42.5 * (expLevel/100)).toFixed(1)}h / sem.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end"><button onClick={onNext} className="btn-primary">Passer à la Partie 5 <i className="fas fa-arrow-right ml-2"></i></button></div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // PARTIE 5 : AFFECTATION DE LA CHARGE
+    // ==========================================
+    function Part5_Workload({ onComplete }) {
+      const [team, setTeam] = useState(INITIAL_TEAM);
+      const [projects] = useState(INITIAL_PROJECTS);
+      const [selectedUser, setSelectedUser] = useState(null);
+      const [hoursInput, setHoursInput] = useState('');
+      const [selectedProject, setSelectedProject] = useState('PRJ-02');
+      const [soldFilter, setSoldFilter] = useState('all');
+
+      const handleAssign = (e) => {
+        e.preventDefault();
+        const hrs = parseInt(hoursInput, 10);
+        if (isNaN(hrs) || !selectedUser) return;
+        setTeam(team.map(m => m.id === selectedUser.id ? { ...m, allocated: m.allocated + hrs } : m));
+        setHoursInput(''); setSelectedUser(null);
+      };
+
+      const getFilteredCharge = (memberId) => {
+        let charge = team.find(t => t.id === memberId)?.allocated || 0;
+        if (soldFilter === 'sold') return Math.round(charge * 0.6); 
+        if (soldFilter === 'notsold') return Math.round(charge * 0.4); 
+        return charge;
+      };
+
+      const getHeatmapColor = (pct) => {
+        if (pct === 0) return 'bg-slate-50 text-slate-400';
+        if (pct < 80) return 'bg-green-100 text-green-800';
+        if (pct <= 100) return 'bg-yellow-100 text-yellow-800';
+        return 'bg-red-100 text-red-800 font-bold';
+      };
+
+      return (
+        <div className="space-y-6 animate-fade-in">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2"><i className="fas fa-tasks text-blue-600 mr-2"></i> Partie 5 : Affectation de la Charge</h2>
+            <p className="text-slate-600 text-sm">Le but ultime : Équilibrer l'Offre (Capacité) et la Demande (Charge des Projets).</p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 space-y-4">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h4 className="font-bold text-slate-800 border-b pb-2 text-sm">Règles d'allocation OPTIMA</h4>
+                <ul className="text-[11px] space-y-3 mt-3 text-slate-600">
+                  <li className="flex items-start"><i className="fas fa-percentage text-blue-400 mt-0.5 mr-2 w-3 text-center"></i> <span><strong className="text-slate-800">R1 Répartie :</strong> Égalitairement entre membres.</span></li>
+                  <li className="flex items-start"><i className="fas fa-sort-amount-down text-blue-400 mt-0.5 mr-2 w-3 text-center"></i> <span><strong className="text-slate-800">R2 Cascade :</strong> Sature le Prio 1, puis déverse sur Prio 2.</span></li>
+                  <li className="flex items-start"><i className="fas fa-pen text-blue-400 mt-0.5 mr-2 w-3 text-center"></i> <span><strong className="text-slate-800">R3 Manuelle :</strong> Saisie exacte (Simulateur ci-dessous).</span></li>
+                </ul>
+              </div>
+
+              <div className={`bg-white p-5 rounded-2xl border shadow-sm transition-all duration-300 ${selectedUser ? 'border-blue-400 ring-4 ring-blue-50' : 'border-slate-200'}`}>
+                <h4 className="font-bold text-slate-800 border-b pb-2 text-sm">Saisie Manuelle (R3)</h4>
+                {selectedUser ? (
+                  <form onSubmit={handleAssign} className="space-y-3 mt-3 text-xs animate-fade-in">
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 text-blue-900 font-bold flex items-center">
+                      <i className="fas fa-user-circle mr-2 text-lg text-blue-400"></i> {selectedUser.name}
+                    </div>
+                    <select value={selectedProject} onChange={e=>setSelectedProject(e.target.value)} className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors">
+                      {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <input type="number" value={hoursInput} onChange={e=>setHoursInput(e.target.value)} placeholder="Volume affecté (h)" className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" required min="1"/>
+                    <button type="submit" className="w-full btn-primary justify-center bg-blue-900 py-2.5 shadow-md">Affecter les heures</button>
+                    <button type="button" onClick={() => setSelectedUser(null)} className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 transition-colors rounded-lg font-bold text-slate-600">Annuler</button>
+                  </form>
+                ) : (
+                  <div className="text-center py-6 px-4 text-slate-400 text-xs bg-slate-50 rounded-lg border border-dashed border-slate-200 mt-3">
+                    <i className="fas fa-mouse-pointer mb-2 text-lg block"></i>
+                    Sélectionnez une ressource dans la Heatmap pour lui affecter de la charge.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 mb-4 gap-3">
+                  <h4 className="font-bold text-slate-800 text-sm"><i className="fas fa-th text-blue-900 mr-2"></i> Heatmap S&OP</h4>
+                  <div className="flex bg-slate-100 p-1 rounded-lg">
+                    <button onClick={()=>setSoldFilter('all')} className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all ${soldFilter==='all'?'bg-white text-blue-600 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>Tous</button>
+                    <button onClick={()=>setSoldFilter('sold')} className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all ${soldFilter==='sold'?'bg-white text-green-600 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>Sold</button>
+                    <button onClick={()=>setSoldFilter('notsold')} className={`px-3 py-1.5 text-[10px] font-bold rounded-md transition-all ${soldFilter==='notsold'?'bg-white text-amber-600 shadow-sm':'text-slate-500 hover:text-slate-700'}`}>Not Sold</button>
+                  </div>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left whitespace-nowrap">
+                    <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
+                      <tr>
+                        <th className="p-3 font-semibold rounded-tl-lg">Ressource</th>
+                        <th className="p-3 text-center font-semibold">Capacité (Fixe)</th>
+                        <th className="p-3 text-center font-semibold">Charge (Workload)</th>
+                        <th className="p-3 text-center font-semibold rounded-tr-lg">Taux</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {team.map(t => {
+                        const charge = getFilteredCharge(t.id);
+                        const baseCap = 151; // Simplifié pour l'affichage final
+                        const pct = Math.round((charge / baseCap) * 100) || 0;
+                        return (
+                          <tr key={t.id} onClick={() => setSelectedUser(t)} className={`cursor-pointer transition-colors ${selectedUser && selectedUser.id === t.id ? 'bg-blue-50' : 'hover:bg-slate-50'}`}>
+                            <td className="p-3 font-medium text-xs flex items-center">
+                              <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-[10px] font-bold mr-2">
+                                {t.name.split(' ').map(n=>n[0]).join('')}
+                              </div>
+                              {t.name}
+                            </td>
+                            <td className="p-3 text-center text-xs text-slate-500 font-mono">{baseCap}h</td>
+                            <td className="p-3 text-center text-xs font-bold text-blue-900 font-mono">{charge}h</td>
+                            <td className="p-3">
+                              <div className="flex justify-center">
+                                <span className={`px-2.5 py-1 rounded-md text-xs font-bold w-14 text-center shadow-sm ${getHeatmapColor(pct)}`}>
+                                  {pct}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-4 bg-slate-50 p-2 rounded flex items-start">
+                  <i className="fas fa-info-circle mt-0.5 mr-2"></i> 
+                  <span>Notez que le filtre "Sold / Not Sold" modifie dynamiquement la Charge affichée, mais la Capacité (l'Offre) reste imperturbable et sert de référence fixe.</span>
+                </p>
+              </div>
+              
+              <button onClick={onComplete} className="w-full btn-primary justify-center bg-green-600 hover:bg-green-700 mt-6 shadow-md border border-green-700">
+                <i className="fas fa-flag-checkered mr-2"></i> Terminer le parcours de formation
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- COMPOSANT NAV ITEM ---
+    function NavItem({ icon, label, isActive, onClick }) {
+      return (
+        <button 
+          onClick={onClick}
+          className={`w-full flex items-center px-6 py-3.5 text-xs font-bold transition-all relative
+            ${isActive ? 'bg-[#132c4a] text-white border-l-4 border-blue-500 shadow-inner' : 'text-slate-300 hover:bg-[#132c4a]/50 hover:text-white border-l-4 border-transparent'}`}
+        >
+          <i className={`fas ${icon} w-6 text-center mr-3 text-sm ${isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`}></i>
+          <span className="flex-1 text-left">{label}</span>
+          {isActive && <i className="fas fa-chevron-right text-[10px] text-blue-500 opacity-50"></i>}
+        </button>
+      );
+    }
+
+    // Initialisation
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
