@@ -1,0 +1,382 @@
+<!-- Fichier : Part4.html -->
+<script type="text/babel">
+  function Part4_Advanced({ onNext }) {
+    const [activeStep, setActiveStep] = React.useState('indispo');
+    const [activeVideoIndex, setActiveVideoIndex] = React.useState(1);
+
+    // Mémorisation des cases cliquées (On initialise avec la case par défaut)
+    const [clickedSteps, setClickedSteps] = React.useState(new Set(['indispo']));
+    const [hasLoggedCompletion, setHasLoggedCompletion] = React.useState(false);
+
+    // Utilisation du contexte global pour récupérer/sauvegarder les contenus CMS
+    const { content = {}, setContent, isEditMode, logProgress, gainXp } = React.useContext(window.ContentContext) || {};
+
+    // Remonter la page automatiquement au chargement
+    React.useEffect(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, []);
+
+    // Réinitialiser à la vidéo 1 quand on change d'étape
+    React.useEffect(() => {
+      setActiveVideoIndex(1);
+    }, [activeStep]);
+
+    // Définition des nœuds du diagramme (Anciens grisés + Nouveaux actifs complets)
+    const steps = [
+      // Étapes Basiques (Inactives dans la partie 4)
+      { id: '1', prefix: "Etape 1", label: "Création", icon: "fa-plus-square", color: "slate", disabled: true },
+      { id: '2', prefix: "Etape 2", label: "Validation", icon: "fa-check-double", color: "slate", disabled: true },
+      { id: '3b', prefix: "Etape 3b", label: "Création Ext.", icon: "fa-user-plus", color: "slate", disabled: true },
+      { id: '3', prefix: "Etape 3", label: "Affectation", icon: "fa-user-check", color: "slate", disabled: true },
+      { id: '4', prefix: "Etape 4", label: "Arrivée", icon: "fa-plane-arrival", color: "slate", disabled: true },
+      { id: '5', prefix: "Etape 5", label: "Avenant", icon: "fa-calendar-alt", color: "slate", disabled: true },
+      { id: '7', prefix: "Etape 7", label: "Départ", icon: "fa-door-open", color: "slate", disabled: true },
+      { id: '8', prefix: "Etape 8", label: "Clôture", icon: "fa-lock", color: "slate", disabled: true },
+
+      // Nouvelles Étapes Avancées (Actives - au nombre de 8)
+      { id: 'indispo', prefix: "Action", titleId: "p4_sindispo_title", label: "Indisponibilité", icon: "fa-bed", color: "amber" },
+      { id: 'complex_mod', prefix: "Action", titleId: "p4_scomplex_mod_title", label: "Modifs. Complexes", icon: "fa-chart-line", color: "blue" },
+      { id: 'pret_req', prefix: "Prêt", titleId: "p4_spret_req_title", label: "Demande de prêt", icon: "fa-hands-helping", color: "purple" },
+      { id: 'pret_acc', prefix: "Prêt", titleId: "p4_spret_acc_title", label: "Validation prêt", icon: "fa-check-circle", color: "purple" },
+      { id: 'pret_end', prefix: "Prêt", titleId: "p4_spret_end_title", label: "Fin du prêt", icon: "fa-hourglass-end", color: "purple" },
+      { id: 'trans_req', prefix: "Transfert", titleId: "p4_strans_req_title", label: "Demande transfert", icon: "fa-exchange-alt", color: "pink" },
+      { id: 'trans_acc', prefix: "Transfert", titleId: "p4_strans_acc_title", label: "Validation transfert", icon: "fa-check-circle", color: "pink" },
+      { id: 'trans_eff', prefix: "Transfert", titleId: "p4_strans_eff_title", label: "Prise d'effet", icon: "fa-calendar-check", color: "pink" }
+    ];
+
+    const activeStepsIds = steps.filter(s => !s.disabled).map(s => s.id);
+    const isAllStepsClicked = activeStepsIds.every(id => clickedSteps.has(id));
+
+    // Déclencher le log unique quand tout a été cliqué
+    React.useEffect(() => {
+      if (isAllStepsClicked && !hasLoggedCompletion) {
+        setHasLoggedCompletion(true);
+        if (logProgress) {
+          logProgress('Partie 4 - Diagramme Avancé', { exercice: 'Exploration Workflows Complexes', action: `Toutes les étapes (${activeStepsIds.length}/${activeStepsIds.length}) consultées` });
+        }
+      }
+    }, [isAllStepsClicked, hasLoggedCompletion, logProgress, activeStepsIds.length]);
+
+    // Extraction des URLs vidéos depuis le CMS pour l'étape courante
+    const v1Url = content[`p4_s${activeStep}_v1`] || '';
+    const v2Url = content[`p4_s${activeStep}_v2`] || '';
+    const hasSecondVideo = v2Url && v2Url.trim() !== '';
+    const rawVideoUrl = activeVideoIndex === 1 ? v1Url : v2Url;
+
+    // Formatage automatique des liens
+    const formatVideoUrl = (url) => {
+      if (!url) return '';
+      let formatted = url.trim();
+      if (formatted.includes('drive.google.com/file/d/')) {
+        formatted = formatted.replace(/\/view.*$/, '/preview');
+      } else if (formatted.includes('youtube.com/watch?v=')) {
+        const videoId = formatted.split('v=')[1].split('&')[0];
+        formatted = `https://www.youtube.com/embed/${videoId}`;
+      } else if (formatted.includes('youtu.be/')) {
+        const videoId = formatted.split('youtu.be/')[1].split('?')[0];
+        formatted = `https://www.youtube.com/embed/${videoId}`;
+      }
+      return formatted;
+    };
+
+    const currentVideoUrl = formatVideoUrl(rawVideoUrl);
+
+    // Composant Noeud du diagramme
+    const FlowNode = ({ id }) => {
+      const item = steps.find(s => s.id === id);
+      if (!item) return null;
+      
+      const isActive = activeStep === item.id;
+      const isDisabled = item.disabled;
+      const isVisited = clickedSteps.has(item.id);
+
+      return (
+        <button
+          onClick={() => {
+            if (!isDisabled) {
+              setActiveStep(item.id);
+              if (!clickedSteps.has(item.id)) {
+                setClickedSteps(prev => new Set(prev).add(item.id));
+                if (gainXp) gainXp(15); // Gain d'XP pour l'exploration
+              }
+            }
+          }}
+          disabled={isDisabled}
+          className={`flex flex-col items-center justify-center w-[110px] sm:w-[120px] h-20 p-2 rounded-xl border-2 transition-all relative z-20 shrink-0
+            ${isDisabled 
+              ? 'bg-slate-50 border-slate-200 text-slate-400 opacity-60 cursor-not-allowed' 
+              : isActive 
+                ? `bg-${item.color}-50 border-${item.color}-500 text-${item.color}-900 ring-4 ring-${item.color}-100 scale-105 shadow-md` 
+                : `bg-white border-slate-200 text-slate-600 hover:border-${item.color}-300 hover:bg-slate-50 shadow-sm cursor-pointer`}`}
+        >
+          {/* Coche verte pour les étapes consultées non-actives */}
+          {isVisited && !isActive && !isDisabled && (
+            <i className="fas fa-check-circle absolute top-1.5 right-1.5 text-emerald-500 text-[10px]"></i>
+          )}
+          
+          <i className={`fas ${item.icon} text-lg mb-1.5 ${isActive ? `text-${item.color}-600` : isDisabled ? 'text-slate-300' : 'text-slate-400'}`}></i>
+          <span className="text-[9px] font-bold text-center leading-tight">
+            {!isDisabled && item.prefix && <span className="opacity-75">{item.prefix}<br/></span>}
+            {item.label}
+          </span>
+        </button>
+      );
+    };
+
+    return (
+      <div className="space-y-6 animate-fade-in pb-10">
+        
+        {/* EN-TÊTE */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h2 className="text-2xl font-bold text-slate-800 mb-2 flex items-center">
+            <i className="fas fa-level-up-alt text-blue-600 mr-3"></i> 
+            <T id="p4_title" />
+          </h2>
+          <p className="text-slate-600">
+            <T id="p4_desc" multiline={true} />
+          </p>
+        </div>
+
+        {/* DIAGRAMME INTERACTIF DES PROCESSUS AVANCÉS */}
+        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+          <div className="flex flex-col items-center relative py-4 w-full min-w-[800px]">
+
+            {/* HAUT DU DIAGRAMME : RAPPEL CYCLE DE VIE (Grisé et réduit) */}
+            <div className="flex items-center justify-center gap-2 scale-90 origin-top opacity-70 mb-2 w-full">
+              <FlowNode id="1" />
+              <i className="fas fa-arrow-right text-slate-300"></i>
+              <FlowNode id="2" />
+              <i className="fas fa-arrow-right text-slate-300"></i>
+              <div className="flex flex-col items-center">
+                <FlowNode id="3b" />
+                <i className="fas fa-arrow-down text-slate-300 my-1"></i>
+                <FlowNode id="3" />
+              </div>
+              <i className="fas fa-arrow-right text-slate-300"></i>
+              <FlowNode id="4" />
+              <i className="fas fa-arrow-right text-slate-300"></i>
+              
+              {/* HUB CENTRAL : RESSOURCE EN COURS */}
+              <div className="bg-emerald-50 border-2 border-emerald-500 text-emerald-900 px-5 py-3 rounded-xl flex items-center shadow-md z-20">
+                <i className="fas fa-play-circle text-emerald-500 mr-3 text-2xl"></i>
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase font-bold text-emerald-600 leading-tight">Statut 5</span>
+                  <span className="text-sm font-extrabold tracking-wide">Ressource Ongoing</span>
+                </div>
+              </div>
+            </div>
+
+            {/* CONNEXION CENTRALE VERS LE BAS */}
+            <i className="fas fa-arrow-down text-slate-300 text-2xl my-3"></i>
+
+            {/* SECTIONS AVANCÉES (Cliquables, avec Flex Wrap pour s'adapter à l'écran) */}
+            <div className="w-full flex justify-center relative mt-4 border-t-2 border-slate-200 pt-8">
+              {/* Connecteur T central */}
+              <div className="absolute top-0 left-1/2 w-[2px] h-[32px] bg-slate-200 -translate-y-full"></div>
+
+              <div className="flex flex-wrap justify-center gap-6 w-full">
+                
+                {/* BLOC 1 : Actions classiques (Désactivées pour la P4) */}
+                <div className="flex gap-2 sm:gap-3 border border-slate-100 bg-slate-50/50 p-3 rounded-2xl items-center relative">
+                  <span className="absolute -top-3 left-4 bg-slate-200 text-slate-600 px-2 py-0.5 rounded text-[9px] font-bold">Classiques (Vu en P3)</span>
+                  <FlowNode id="5" />
+                  <FlowNode id="7" />
+                  <FlowNode id="8" />
+                </div>
+
+                {/* BLOC 2 : Actions Spécifiques Avancées */}
+                <div className="flex gap-2 sm:gap-3 border border-blue-100 bg-blue-50/30 p-3 rounded-2xl relative">
+                  <span className="absolute -top-3 left-4 bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[9px] font-bold">Spécifiques</span>
+                  <FlowNode id="indispo" />
+                  <FlowNode id="complex_mod" />
+                </div>
+
+                {/* BLOC 3 : Processus de Prêt */}
+                <div className="flex gap-2 sm:gap-3 items-center border border-purple-200 bg-purple-50/30 p-3 rounded-2xl relative">
+                  <span className="absolute -top-3 left-4 bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[9px] font-bold border border-purple-200">Workflows de Prêt</span>
+                  <FlowNode id="pret_req" />
+                  <i className="fas fa-arrow-right text-purple-300 text-sm sm:text-lg"></i>
+                  <FlowNode id="pret_acc" />
+                  <i className="fas fa-arrow-right text-purple-300 text-sm sm:text-lg"></i>
+                  <FlowNode id="pret_end" />
+                </div>
+
+                {/* BLOC 4 : Processus de Transfert */}
+                <div className="flex gap-2 sm:gap-3 items-center border border-pink-200 bg-pink-50/30 p-3 rounded-2xl relative">
+                  <span className="absolute -top-3 left-4 bg-pink-100 text-pink-700 px-2 py-0.5 rounded text-[9px] font-bold border border-pink-200">Workflows de Transfert</span>
+                  <FlowNode id="trans_req" />
+                  <i className="fas fa-arrow-right text-pink-300 text-sm sm:text-lg"></i>
+                  <FlowNode id="trans_acc" />
+                  <i className="fas fa-arrow-right text-pink-300 text-sm sm:text-lg"></i>
+                  <FlowNode id="trans_eff" />
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* LECTEUR VIDÉO ET EXPLICATIONS */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            
+            {/* Colonne Explication */}
+            <div className="space-y-4 animate-fade-in" key={activeStep}>
+              <h3 className="text-xl font-bold text-slate-800 flex items-center border-b pb-3 border-slate-100">
+                <i className={`fas ${steps.find(s => s.id === activeStep)?.icon || 'fa-info-circle'} text-${steps.find(s => s.id === activeStep)?.color || 'slate'}-500 mr-3`}></i>
+                <T id={`p4_s${activeStep}_title`} />
+              </h3>
+              <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-5 rounded-xl border border-slate-100 shadow-inner">
+                <T id={`p4_s${activeStep}_desc`} multiline={true} />
+              </p>
+              
+              {/* ENCART "MAILS" (Désormais visible pour les Transferts ET les Prêts) */}
+              {['trans_req', 'trans_acc', 'trans_eff', 'pret_req', 'pret_acc', 'pret_end'].includes(activeStep) && (
+                <div className="bg-sky-50 border border-sky-200 p-5 rounded-xl shadow-sm mt-4 animate-fade-in relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-sky-500"></div>
+                  <h4 className="font-bold text-sky-900 text-sm mb-2 flex items-center">
+                    <i className="fas fa-envelope-open-text text-sky-600 mr-2 text-lg"></i> Système de Notifications (E-mails)
+                  </h4>
+                  <p className="text-xs text-sky-800 leading-relaxed">
+                    <T id="p4_trans_mails_desc" multiline={true} />
+                  </p>
+                </div>
+              )}
+
+              {/* Conseils Pédagogiques conditionnels pour les étapes avancées */}
+              {activeStep === 'pret_req' && (
+                <div className="bg-purple-50 border-l-4 border-purple-500 p-3 rounded text-xs text-purple-800">
+                  <i className="fas fa-info-circle mr-2"></i> Le prêt ne transfère que la capacité sur une période donnée. Le collaborateur reste rattaché à son manager d'origine.<br /><br />
+                  Période de validité : Les dates d'un prêt doivent impérativement être comprises à l'intérieur de la période d'activité de la ressource d'origine.<br /><br />
+                  Plafond de 100% : La somme des taux de prêts en cours pour un même collaborateur ne peut pas dépasser 100%.<br /><br />
+                  Calcul de la capacité réelle : Le taux de prêt s'applique sur le temps de travail du collaborateur. (ex: Un temps partiel à 80% prêté à 50% transfèrera une capacité réelle de 40%).
+                </div>
+              )}
+              {activeStep === 'pret_end' && (
+                <div className="bg-purple-50 border-l-4 border-purple-500 p-3 rounded text-xs text-purple-800">
+                  <i className="fas fa-magic mr-2"></i> Le retour de capacité est 100% automatique, aucune action du manager d'origine n'est requise à la date de fin.
+                </div>
+              )}
+              {activeStep === 'trans_req' && (
+                <div className="bg-pink-50 border-l-4 border-pink-500 p-3 rounded text-xs text-pink-800">
+                  <i className="fas fa-exclamation-triangle mr-2"></i> Attention, le transfert est définitif. Il modifie le Cost Center (Département) du collaborateur.
+                </div>
+              )}
+              {activeStep === 'trans_eff' && (
+                <div className="bg-pink-50 border-l-4 border-pink-500 p-3 rounded text-xs text-pink-800">
+                  <i className="fas fa-eye-slash mr-2"></i> Une fois la date d'effet atteinte, l'ancien manager perd la visibilité sur la ressource qui est désormais sous la responsabilité exclusive du nouveau département.
+                </div>
+              )}
+              {activeStep === 'complex_mod' && (
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded text-xs text-blue-800">
+                  <i className="fas fa-lightbulb mr-2"></i> L'utilisation de la fonction "planifier un changement" met à jour la date de fin d'une ressource. Si celle-ci est annulée, il faudra re-planifier son départ à la date initiale (si CDI, mettre 01-01-2100).
+                </div>
+              )}
+            </div>
+
+            {/* Colonne Lecteur Vidéo & Configuration */}
+            <div className="flex flex-col h-full space-y-4">
+              
+              {/* Le Lecteur Vidéo */}
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 shadow-inner">
+                <div className="relative w-full aspect-video bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 flex flex-col justify-center items-center">
+                  {currentVideoUrl ? (
+                    <iframe 
+                      src={currentVideoUrl} 
+                      className="w-full h-full border-0 absolute top-0 left-0" 
+                      allowFullScreen={true}
+                      title={`Vidéo Tutoriel Partie 4 - ${activeStep}`}>
+                    </iframe>
+                  ) : (
+                    <div className="text-slate-500 flex flex-col items-center p-6 text-center">
+                      <i className="fas fa-video-slash text-3xl mb-3 opacity-50"></i>
+                      <span className="text-sm font-bold text-slate-400">Aucune vidéo configurée</span>
+                      <span className="text-xs mt-2">Activez le "Mode Édition" pour ajouter un lien.</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Boutons de sélection si Vidéo 2 existe */}
+                {hasSecondVideo && !isEditMode && (
+                  <div className="flex gap-2 mt-4">
+                    <button 
+                      onClick={() => setActiveVideoIndex(1)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${activeVideoIndex === 1 ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
+                    >
+                      <i className="fas fa-play-circle mr-1.5"></i> Vidéo n°1
+                    </button>
+                    <button 
+                      onClick={() => setActiveVideoIndex(2)}
+                      className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${activeVideoIndex === 2 ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-200 text-slate-600 hover:bg-slate-300'}`}
+                    >
+                      <i className="fas fa-play-circle mr-1.5"></i> Vidéo n°2
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* INTERFACE D'AJOUT DE VIDÉOS (Uniquement visible en Mode Édition) */}
+              {isEditMode && (
+                <div className="bg-amber-50 p-5 rounded-xl border-2 border-amber-300 shadow-sm animate-fade-in space-y-4">
+                  <h4 className="font-bold text-amber-900 text-sm flex items-center">
+                    <i className="fas fa-cogs mr-2 text-amber-600"></i>
+                    Configuration des vidéos ({steps.find(s=>s.id===activeStep)?.label})
+                  </h4>
+                  
+                  <div>
+                    <label className="text-xs font-bold text-amber-800 block mb-1">Lien de la Vidéo 1 :</label>
+                    <input 
+                      type="text"
+                      value={content[`p4_s${activeStep}_v1`] || ''}
+                      onChange={e => setContent({...content, [`p4_s${activeStep}_v1`]: e.target.value})}
+                      placeholder="Coller un lien Google Drive ou YouTube"
+                      className="w-full p-2.5 text-xs border border-amber-300 rounded-lg outline-none focus:border-amber-500 bg-white" 
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-amber-800 block mb-1">Lien de la Vidéo 2 (Optionnel) :</label>
+                    <input 
+                      type="text"
+                      value={content[`p4_s${activeStep}_v2`] || ''}
+                      onChange={e => setContent({...content, [`p4_s${activeStep}_v2`]: e.target.value})}
+                      placeholder="Coller un lien Google Drive ou YouTube"
+                      className="w-full p-2.5 text-xs border border-amber-300 rounded-lg outline-none focus:border-amber-500 bg-white" 
+                    />
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+          </div>
+
+          <div className="mt-8 flex flex-col md:flex-row justify-between items-center border-t border-slate-100 pt-6 gap-4">
+            <div className="text-xs text-slate-500 flex-1">
+              <i className="fas fa-info-circle mr-1"></i> Cliquez sur chaque étape d'action spécifique, de prêt ou de transfert pour découvrir son contenu. ({clickedSteps.size}/{activeStepsIds.length})
+              
+              {isAllStepsClicked && (
+                <div className="mt-2 text-emerald-600 font-bold animate-fade-in text-sm">
+                  <i className="fas fa-check-circle mr-1.5"></i> Diagramme entièrement consulté ! Vous pouvez passer à la suite.
+                </div>
+              )}
+            </div>
+            
+            <button 
+              onClick={onNext} 
+              disabled={!isAllStepsClicked}
+              className={`py-3 px-8 text-base rounded-xl font-bold transition-all shadow-sm
+                ${!isAllStepsClicked 
+                  ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md hover:-translate-y-0.5'}`}
+            >
+              Passer à la Partie 5 <i className="fas fa-arrow-right ml-2"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    );
+  }
+</script>
